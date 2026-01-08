@@ -1,0 +1,9 @@
+{
+  "name": "OpenVPN Client",
+  "id": "openvpn-cli",
+  "version": "1.0.0",
+  "description": "Installs OpenVPN client for connecting to VPN networks",
+  "options": {},
+  "onCreateCommand": "bash /usr/local/share/openvpn-init.sh",
+  "postStartCommand": "bash /usr/local/share/openvpn-post-start.sh"
+}

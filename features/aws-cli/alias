@@ -1,0 +1,208 @@
+[toplevel]
+whoami = 
+    !f() {
+        echo "Profile: ${AWS_PROFILE:-default}"
+        aws sts get-caller-identity --output=yaml
+    }; f
+
+id = sts get-caller-identity --query "Account" --output text
+
+op-credentials = 
+    !f() {
+        op --vault=${2:-Private} item get "${1}" --format=json \
+        --fields="label=AccessKeyId,label=SecretAccessKey" | \
+        jq 'map({key: .label, value: .value}) | from_entries + {Version: 1}'
+    }; f
+
+op-credentials-mfa = 
+    !f() {
+        local CREDS CREDS_EXP EXP NOW
+        local CACHE_DIR="${HOME}/.aws/cli/cache"
+        local CACHE_FILE="${CACHE_DIR}/${AWS_PROFILE}.json"
+
+        # if the cache file exists, use it
+        if [ -f $CACHE_FILE ]; then
+          CREDS="$(cat $CACHE_FILE)"
+          CREDS_EXP="$(echo "$CREDS" | jq -r '.Credentials.Expiration')"
+          EXP="$(date -jf '%Y-%m-%dT%H:%M:%S' "$CREDS_EXP" "+%s" 2>/dev/null)"
+          NOW="$(date +%s)"
+
+          # regen cache if current one is expired
+          if [ "$EXP" -lt "$NOW" ]; then
+            CREDS="$(aws sts op-mfa "$1" "$2")"
+            echo "$CREDS" > $CACHE_FILE
+          fi
+        else
+          CREDS="$(aws sts op-mfa "$1" "$2")"
+          echo "$CREDS" > $CACHE_FILE
+        fi
+
+        echo "$CREDS" | jq -r '.Credentials | . + {Version: 1}'
+    }; f
+
+jit = 
+    !f() {
+        duploctl jit web $@
+    }; f
+
+console = 
+    !f() {
+        local ACCOUNT_ID="$(aws id)"
+        local url="https://${ACCOUNT_ID}.signin.aws.amazon.com/console"
+        open "$url"
+    }; f
+
+temp-session =
+    !f() {
+        local creds="$(aws sts temp)"
+        cat <<EOF
+        export AWS_ACCESS_KEY_ID="$(echo $creds | jq -r '.Credentials.AccessKeyId')"
+        export AWS_SECRET_ACCESS_KEY="$(echo $creds | jq -r '.Credentials.SecretAccessKey')"
+        export AWS_SESSION_TOKEN="$(echo $creds | jq -r '.Credentials.SessionToken')"
+        EOF
+    }; f
+
+gcl-session =
+    !f() {
+        local creds="$(aws sts temp)"
+        cat <<EOF > .gitlab-ci-local-variables.yml
+        AWS_ACCESS_KEY_ID: "$(echo $creds | jq -r '.Credentials.AccessKeyId')"
+        AWS_SECRET_ACCESS_KEY: "$(echo $creds | jq -r '.Credentials.SecretAccessKey')"
+        AWS_SESSION_TOKEN: "$(echo $creds | jq -r '.Credentials.SessionToken')"
+        AWS_ACCOUNT_ID: "$(aws id)"
+        AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+        EOF
+    }; f
+
+act-session =
+    !f() {
+        local creds="$(aws sts temp)"
+        local act_args=()
+        act_args+=(--env AWS_ACCESS_KEY_ID="$(echo $creds | jq -r '.Credentials.AccessKeyId')")
+        act_args+=(--env AWS_SECRET_ACCESS_KEY="$(echo $creds | jq -r '.Credentials.SecretAccessKey')")
+        act_args+=(--env AWS_SESSION_TOKEN="$(echo $creds | jq -r '.Credentials.SessionToken')")
+        act_args+=(--env AWS_ACCOUNT_ID="$(aws id)")
+        act_args+=(--env AWS_DEFAULT_REGION="$AWS_DEFAULT_REGION")
+        act_args+=(--env AWS_REGION="$AWS_DEFAULT_REGION")
+        echo "${act_args[*]}"
+    }; f
+
+[command sts]
+temp = 
+    !f() {
+        aws sts assume-role \
+        --role-arn arn:aws:iam::$(aws id):role/duplomaster \
+        --role-session-name "AdminSession"
+    }; f
+
+op-mfa = 
+    !f() {
+        local base_creds="$(aws op-credentials "$1")"
+        export AWS_ACCESS_KEY_ID="$(echo $base_creds | jq -r '.AccessKeyId')"
+        export AWS_SECRET_ACCESS_KEY="$(echo $base_creds | jq -r '.SecretAccessKey')"
+        aws sts get-session-token \
+          --serial-number $(aws iam mymfa) \
+          --token-code $(op item get "$2" --otp --vault=Private) \
+          | jq -r '. + {ProviderType: "opmfa"}'
+    }; f
+
+[command ssm]
+proxy = 
+    !f() {
+        # Arguments
+        USER=$1
+        HOSTNAME=$2
+        PORT=$3
+
+        # Prepare temporary SSH key
+        ONE_TIME_KEY_FILE_NAME="$(mktemp /tmp/${HOSTNAME}.${USER}.XXXXXX)"
+        yes | ssh-keygen -t rsa -b 4096 -f ${ONE_TIME_KEY_FILE_NAME} -N ''
+        ssh-add -t 60 ${ONE_TIME_KEY_FILE_NAME}
+
+        # Send the SSH key to the target instance
+        AZ="$(aws ec2 describe-instances \
+            --instance-ids ${HOSTNAME} \
+            --output=text \
+            --query 'Reservations[0].Instances[0].Placement.AvailabilityZone')"
+        aws ec2-instance-connect send-ssh-public-key \
+            --instance-id ${HOSTNAME} \
+            --availability-zone $AZ \
+            --instance-os-user "${USER}" \
+            --ssh-public-key "file://${ONE_TIME_KEY_FILE_NAME}.pub"
+
+        # Start the SSM session
+        aws ssm start-session \
+            --target ${HOSTNAME} \
+            --document-name AWS-StartSSHSession \
+            --parameters "portNumber=${PORT}" \
+            --region $AWS_DEFAULT_REGION
+    }; f
+
+[command ec2]
+select =
+  !f() {
+    local selected=$(aws ec2 describe-instances \
+      --query "Reservations[*].Instances[*].{name: Tags[?Key=='Name'] | [0].Value, instance_id: InstanceId, ip_address: PrivateIpAddress, state: State.Name}" \
+      --output table | fzf --header="Select an EC2 instance" --tac)
+    local selected_parts=(${selected//|/})
+    echo "${selected_parts[0]}"
+  }; f
+exec =
+  !f() {
+    local user="${1:-ec2-user}"
+    local ec2id=`aws ec2 select`
+    ssh "$user@$ec2id"
+  }; f
+
+[command eks]
+add-config = 
+  !f() {
+    local cluster=`aws eks list-clusters --query "clusters[*]" | jq -r ".[]" | fzf`
+    aws eks update-kubeconfig --name "$cluster"
+  }; f
+
+[command iam]
+mymfa = list-mfa-devices --query 'MFADevices[0].SerialNumber' --output text
+
+[command ecr]
+login = 
+  !f() {
+    local REGISTRY ACCOUNT_ID
+    ACCOUNT_ID="$(aws id)"
+    REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+    aws ecr get-login-password | docker login --username AWS --password-stdin $REGISTRY
+  }; f
+
+[command rds]
+select =
+  !f() {
+    local selected=$(aws rds describe-db-clusters \
+      --output table \
+      --query "DBClusters[*].{name: TagList[?Key=='Name'] | [0].Value, id: DBClusterIdentifier, tenant: TagList[?Key=='TENANT_NAME'] | [0].Value}" | fzf --header="Select an RDS cluster" --tac)
+    local selected_parts=(${selected//|/})
+    echo "${selected_parts[0]}"
+  }; f
+port-forward = 
+  !f() {
+    local target_instance target_cluster endpoint
+    target_instance=$(aws ec2 select)
+    target_cluster=$(aws rds select)
+    ports=${1:-5432:5432}
+    local local_port=${ports%%:*}
+    local remote_port=${ports##*:}
+    rds_endpoint=$(aws rds describe-db-cluster-endpoints \
+      --output text \
+      --db-cluster-identifier "${target_cluster}" \
+      --query "DBClusterEndpoints[?EndpointType=='WRITER'] | [0].Endpoint")
+    echo """
+    ec2 instance: ${target_instance}
+    rds cluster: ${target_cluster} 
+    rds endpoint: ${rds_endpoint}
+    local port: ${local_port}
+    remote port: ${remote_port}
+    """
+    aws ssm start-session \
+      --target "${target_instance}" \
+      --document-name AWS-StartPortForwardingSessionToRemoteHost \
+      --parameters host="${rds_endpoint}",portNumber="${remote_port}",localPortNumber="${local_port}"
+  }; f

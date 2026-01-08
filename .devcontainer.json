@@ -1,0 +1,76 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-docker-compose
+{
+	"name": "Customer Workspace",
+
+	// Update the 'dockerComposeFile' list if you have more compose files or use different names.
+	// The .devcontainer/docker-compose.yml file contains any overrides you need/want to make.
+	// "service": "kubed-dev",
+	// "runServices": [],
+	// "dockerComposeFile": [
+	// 	"docker-compose.yaml"
+	// ],
+	
+	"build": {
+		"dockerfile": "Dockerfile",
+		"target": "devcontainer"
+	},
+	// The optional 'workspaceFolder' property is the path VS Code should open by default when
+	// connected. This is typically a file mount in .devcontainer/docker-compose.yml
+	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	"features": {
+		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+			"moby": false
+		}
+	},
+	"containerEnv": {
+		"XDG_CONFIG_HOME": "/kubed",
+		"OP_CONNECT_HOST": "${env:OP_CONNECT_HOST}",
+		"OP_CONNECT_SERVER": "${env:OP_CONNECT_SERVER}",
+		"OP_CONNECT_TOKEN_NAME": "kubed-devcontainer",
+		"OP_VAULT_NAME": "${env:OP_VAULT_NAME}",
+		"OP_SSH_SECRET": "${env:OP_SSH_SECRET}"
+	},
+	"runArgs": [
+		"--cap-add=NET_ADMIN",
+		"--cap-add=NET_RAW",
+		"--device=/dev/net/tun",
+		"--env-file=op-connect.env"
+		// "--network=cluster_apps"
+	],
+	"mounts": [
+		// "source=${env:HOME}/.1password/agent.sock,target=/home/vscode/.1password/agent.sock,type=bind",
+		// "source=${env:HOME}/.ssh,target=/home/vscode/.ssh,type=bind",
+		// "source=${env:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind",
+		// "source=/opt/1Password,target=/opt/1Password,type=bind"
+	],
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// Uncomment the next line if you want to keep your containers running after VS Code shuts down.
+	// "shutdownAction": "none",
+
+	"initializeCommand": "scripts/initialize.sh",
+	"onCreateCommand": "scripts/on-create.sh",
+
+	// Configure tool-specific properties.
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"redhat.vscode-yaml",
+				"mads-hartmann.bash-ide-vscode",
+				"github.copilot",
+				"github.vscode-github-actions"
+			],
+			"settings": {
+
+			}
+		}
+	}
+
+	// Uncomment to connect as an existing user other than the container default. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "devcontainer"
+}

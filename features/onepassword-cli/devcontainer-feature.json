@@ -1,0 +1,8 @@
+{
+    "name": "1Password CLI",
+    "id": "onepassword-cli",
+    "version": "1.0.0",
+    "description": "Installs 1Password CLI with proper GPG key verification",
+    "documentationURL": "https://github.com/duplocloud-internal/customer-workspace/tree/main/features/onepassword-cli",
+    "options": {}
+}

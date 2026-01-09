@@ -3,6 +3,10 @@ set -e
 
 echo "Installing 1Password CLI..."
 
+# Install required dependencies (curl/gpg may not exist on vanilla images)
+apt-get update
+apt-get install -y --no-install-recommends curl gpg ca-certificates
+
 # Add 1Password GPG key
 curl -sS https://downloads.1password.com/linux/keys/1password.asc | \
   gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg

@@ -17,7 +17,6 @@ jobs:
         - onepassword-cli
         - gcloud-cli
         - terraform
-        - openvpn
         baseImage:
         - debian:latest
         - ubuntu:latest

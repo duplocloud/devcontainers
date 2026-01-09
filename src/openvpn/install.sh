@@ -4,9 +4,13 @@ set -e
 
 echo "Installing OpenVPN client..."
 
-# Install openvpn client
+# Use devcontainer environment variables with fallbacks
+_REMOTE_USER="${_REMOTE_USER:-root}"
+_REMOTE_USER_HOME="${_REMOTE_USER_HOME:-/root}"
+
+# Install openvpn client and git (git may not exist on vanilla images)
 apt-get update
-apt-get -y install --no-install-recommends openvpn
+apt-get -y install --no-install-recommends openvpn git
 apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/library-scripts 
 
 # Remove the OPENVPN_CONFIG variable since we don't need it after it's written to a file 

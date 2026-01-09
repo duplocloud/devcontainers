@@ -1,6 +1,6 @@
 {
   "id": "duploctl",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": "duploctl",
   "description": "Installs duploctl CLI via pip (if available) or prebuilt binary.",
   "options": {

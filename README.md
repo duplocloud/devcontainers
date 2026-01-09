@@ -1,20 +1,12 @@
-# Customer Workspace 
+# DuploCloud Devcontainers
 
-A repo that builds the base for customer specific workspaces. This builds the base images that come with all of the common tools and scripts we use. 
+A curated list of dev workspace features to help anyone with a DuploCloud powered workspace. 
 
 ## Project Structure 
 
 The following sections are each a directory or file in the top lefvel of the repo and a description of what's inside. 
 
-### `aws`
-
-Contains the AWS CLI Alias extensions. This is to be copied into a users home directory under `~/.aws/cli/alias/` to extend the AWS CLI with custom commands.
-
-### `scripts` 
-
-Contains various helper scripts that are used to setup and manage the workspace environment. Also handles a lot of wrappers around popular tools to do custom tasks.
-
-### `features`
+### `src`
 
 A number of features for devcontainers are included for ultimate customization. Each of these are distributed to the Github artifacts and can be used by other devcontainers to add functionality. 
 

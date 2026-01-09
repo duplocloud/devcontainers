@@ -16,6 +16,7 @@ jobs:
         - aws-cli
         - onepassword-cli
         - gcloud-cli
+        - direnv
         - terraform
         baseImage:
         - debian:latest

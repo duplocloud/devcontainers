@@ -22,11 +22,12 @@ A number of features for devcontainers are included for ultimate customization. 
 
 The following devcontainer features are available in this repository:
 
-- **[aws-cli](features/aws-cli/)** - Installs AWS CLI with custom aliases and AWS Toolkit extension
-- **[gcloud-cli](features/gcloud-cli/)** - Installs Google Cloud CLI with multi-architecture support
-- **[onepassword-cli](features/onepassword-cli/)** - Installs 1Password CLI with proper GPG key verification
-- **[openvpn-cli](features/openvpn-cli/)** - Installs OpenVPN client for connecting to VPN networks
-- **[terraform](features/terraform/)** - Installs Terraform with DuploCloud-specific helper functions for multi-cloud state management
+- **[aws-cli](src/aws-cli/)** - Installs AWS CLI with custom aliases
+- **[direnv](src/direnv/)** - Installs direnv and a DuploCloud direnvrc
+- **[gcloud-cli](src/gcloud-cli/)** - Installs Google Cloud CLI with multi-architecture support
+- **[onepassword-cli](src/onepassword-cli/)** - Installs 1Password CLI with proper GPG key verification
+- **[openvpn](src/openvpn/)** - Installs OpenVPN client for connecting to VPN networks
+- **[terraform](src/terraform/)** - Installs Terraform with DuploCloud-specific helper functions
 
 ## Capabilities 
 

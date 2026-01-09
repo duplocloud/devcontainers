@@ -4,7 +4,7 @@ Devcontainer features for DuploCloud customer workspaces. Shell scripts in `src/
 
 ## Structure
 
-- `src/` - Devcontainer features (aws-cli, gcloud-cli, terraform, openvpn-cli, onepassword-cli)
+ - `src/` - Devcontainer features (aws-cli, gcloud-cli, terraform, openvpn, onepassword-cli)
 - `scripts/` - Helper scripts
 - `test/` - Test files for features
 

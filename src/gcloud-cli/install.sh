@@ -3,9 +3,9 @@ set -e
 
 echo "Installing Google Cloud CLI..."
 
-# Install required dependencies (curl may not exist on vanilla images)
+# Install required dependencies (curl/fzf may not exist on vanilla images)
 apt-get update
-apt-get install -y --no-install-recommends curl ca-certificates
+apt-get install -y --no-install-recommends curl ca-certificates fzf
 
 # Use devcontainer environment variables with fallbacks
 USER_HOME="${_REMOTE_USER_HOME:-/root}"

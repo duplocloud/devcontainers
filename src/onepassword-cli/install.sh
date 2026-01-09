@@ -3,9 +3,9 @@ set -e
 
 echo "Installing 1Password CLI..."
 
-# Install required dependencies (curl/gpg may not exist on vanilla images)
+# Install required dependencies (curl/gpg/fzf may not exist on vanilla images)
 apt-get update
-apt-get install -y --no-install-recommends curl gpg ca-certificates
+apt-get install -y --no-install-recommends curl gpg ca-certificates fzf
 
 # Add 1Password GPG key
 curl -sS https://downloads.1password.com/linux/keys/1password.asc | \

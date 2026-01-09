@@ -3,6 +3,12 @@ set -e
 
 echo "Activating AWS CLI custom aliases feature..."
 
+# Install fzf dependency
+apt-get update
+apt-get install -y --no-install-recommends fzf
+apt-get clean
+rm -rf /var/lib/apt/lists/*
+
 # Use devcontainer environment variables with fallbacks
 USER_HOME="${_REMOTE_USER_HOME:-/root}"
 USER_NAME="${_REMOTE_USER:-root}"

@@ -2,6 +2,13 @@
 
 set -e
 
+# Check if autoConnect is disabled
+AUTO_CONNECT=$(cat /usr/local/share/openvpn-autoconnect 2>/dev/null || echo "true")
+if [ "${AUTO_CONNECT}" = "false" ]; then
+    echo "OpenVPN autoConnect is disabled, skipping initialization."
+    exit 0
+fi
+
 echo "Initializing OpenVPN configuration..."
 
 # Get the workspace directory - use the containerWorkspaceFolder if available

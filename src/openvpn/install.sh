@@ -36,4 +36,7 @@ cp -f "$(dirname "${BASH_SOURCE[0]}")/post-start.sh" /usr/local/share/openvpn-po
 chmod +x /usr/local/share/openvpn-init.sh
 chmod +x /usr/local/share/openvpn-post-start.sh
 
+# Save the autoConnect option for use by init/post-start scripts
+echo "${AUTOCONNECT:-true}" > /usr/local/share/openvpn-autoconnect
+
 echo "OpenVPN client installed successfully!"

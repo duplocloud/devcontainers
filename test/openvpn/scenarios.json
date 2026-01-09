@@ -1,0 +1,10 @@
+{
+  "install-only": {
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+      "openvpn": {
+        "autoConnect": false
+      }
+    }
+  }
+}

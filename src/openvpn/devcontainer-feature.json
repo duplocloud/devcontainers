@@ -4,7 +4,13 @@
   "version": "1.0.0",
   "description": "Installs OpenVPN client for connecting to VPN networks",
   "documentationURL": "https://github.com/duplocloud/devcontainers/tree/main/src/openvpn",
-  "options": {},
+  "options": {
+    "autoConnect": {
+      "type": "boolean",
+      "default": true,
+      "description": "Automatically initialize and connect to VPN on container start. Set to false to only install the OpenVPN client."
+    }
+  },
   "capAdd": [
     "NET_ADMIN",
     "NET_RAW"

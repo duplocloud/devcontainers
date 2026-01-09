@@ -4,7 +4,7 @@ A curated list of dev workspace features to help anyone with a DuploCloud powere
 
 ## Project Structure 
 
-The following sections are each a directory or file in the top lefvel of the repo and a description of what's inside. 
+The following sections are each a directory or file in the top level of the repo and a description of what's inside. 
 
 ### `src`
 

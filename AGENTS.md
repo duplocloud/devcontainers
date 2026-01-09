@@ -12,6 +12,11 @@ Devcontainer features for DuploCloud customer workspaces. Shell scripts in `src/
 
 - **@git** - Git operations using GitKraken tools (status, commit, push, branch, etc.)
 - **@debug** - Debug GitHub Actions pipelines using gh CLI
+- **@devcontainer** - Devcontainer features expert (create, test, use features)
+
+## Prompts
+
+- **new-feature** - Guided workflow to create a new devcontainer feature
 
 ## Agent Guidance
 

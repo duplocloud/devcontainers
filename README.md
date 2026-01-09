@@ -29,6 +29,67 @@ The following devcontainer features are available in this repository:
 - **[openvpn](src/openvpn/)** - Installs OpenVPN client for connecting to VPN networks
 - **[terraform](src/terraform/)** - Installs Terraform with DuploCloud-specific helper functions
 
+## Creating Features
+
+Each feature lives in `src/<feature-name>/` with this structure:
+
+```
+src/<feature-name>/
+├── devcontainer-feature.json  # Metadata, options, dependencies
+├── install.sh                 # Installation script (runs as root)
+└── (optional files)           # Additional scripts or configs
+```
+
+### devcontainer-feature.json
+
+Defines the feature metadata per the [Features Schema](https://containers.dev/implementors/features/):
+
+```json
+{
+  "id": "my-feature",
+  "version": "1.0.0",
+  "name": "My Feature",
+  "description": "What it does",
+  "options": {
+    "version": {
+      "type": "string",
+      "default": "latest"
+    }
+  },
+  "installsAfter": []
+}
+```
+
+### install.sh
+
+Runs during container build. Access options via environment variables (`$VERSION`).
+
+```bash
+#!/usr/bin/env bash
+set -e
+echo "Installing with version: ${VERSION}"
+```
+
+### Testing Features
+
+Tests live in `test/<feature-name>/test.sh`. Run with:
+
+```bash
+devcontainer features test -f <feature-name> .
+```
+
+See [Feature Starter Repo](https://github.com/devcontainers/feature-starter) for full testing patterns.
+
+## Devcontainer Base Image
+
+Use **runtime images**, not template artifacts:
+
+| ✅ Use | ❌ Avoid |
+|--------|----------|
+| `mcr.microsoft.com/vscode/devcontainers/python:3.11` | `ghcr.io/devcontainers/templates/python:*` |
+
+Template images (`application/vnd.devcontainers`) cannot be used as Docker base images.
+
 ## Capabilities 
 
 ### Syncs to Many Agent Formats

@@ -34,6 +34,7 @@ jobs:
   test-scenarios:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         features:
           - aws-cli

@@ -28,8 +28,8 @@ get_os() {
 }
 
 install_with_pip() {
-  local pkg="duploctl"
-  [[ "$VERSION" != "latest" ]] && pkg="duploctl==${VERSION#v}"
+  local pkg="duplocloud-client"
+  [[ "$VERSION" != "latest" ]] && pkg="duplocloud-client==${VERSION#v}"
   echo "Installing $pkg via pip --user"
   python3 -m pip install --user "$pkg"
 }

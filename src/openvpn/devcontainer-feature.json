@@ -1,9 +1,9 @@
 {
   "name": "OpenVPN Client",
-  "id": "openvpn-cli",
+  "id": "openvpn",
   "version": "1.0.0",
   "description": "Installs OpenVPN client for connecting to VPN networks",
-  "documentationURL": "https://github.com/duplocloud/devcontainers/tree/main/src/openvpn-cli",
+  "documentationURL": "https://github.com/duplocloud/devcontainers/tree/main/src/openvpn",
   "options": {},
   "capAdd": [
     "NET_ADMIN",

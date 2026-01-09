@@ -16,10 +16,12 @@ jobs:
           - onepassword-cli
           - gcloud-cli
           - terraform
+          - openvpn
         baseImage:
           - debian:latest
           - ubuntu:latest
           - mcr.microsoft.com/devcontainers/base:ubuntu
+          - ghcr.io/devcontainers/templates/python:5.0.0
     steps:
       - uses: actions/checkout@v6
 
@@ -38,6 +40,7 @@ jobs:
           - onepassword-cli
           - gcloud-cli
           - terraform
+          - openvpn
     steps:
       - uses: actions/checkout@v6
 

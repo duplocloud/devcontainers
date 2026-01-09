@@ -3,6 +3,10 @@ set -e
 
 echo "Installing Terraform DuploCloud helpers..."
 
+# Use devcontainer environment variables with fallbacks
+USER_HOME="${_REMOTE_USER_HOME:-/root}"
+USER_NAME="${_REMOTE_USER:-root}"
+
 # Install tf.sh to a standard location
 FEATURE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 mkdir -p /usr/local/share/duplocloud
@@ -10,8 +14,8 @@ cp "${FEATURE_DIR}/tf.sh" /usr/local/share/duplocloud/tf.sh
 chmod 644 /usr/local/share/duplocloud/tf.sh
 
 # Source tf.sh in bashrc for interactive shells
-if ! grep -q "source /usr/local/share/duplocloud/tf.sh" /home/vscode/.bashrc; then
-    cat >> /home/vscode/.bashrc <<'EOF'
+if [ -f "$USER_HOME/.bashrc" ] && ! grep -q "source /usr/local/share/duplocloud/tf.sh" "$USER_HOME/.bashrc"; then
+    cat >> "$USER_HOME/.bashrc" <<'EOF'
 
 # Source DuploCloud Terraform helpers
 source /usr/local/share/duplocloud/tf.sh
@@ -29,12 +33,12 @@ fi
 
 # Add to zshrc if zsh is available
 if [ -d "/etc/zsh" ]; then
-    if [ ! -f /home/vscode/.zshrc ]; then
-        touch /home/vscode/.zshrc
-        chown vscode:vscode /home/vscode/.zshrc
+    if [ ! -f "$USER_HOME/.zshrc" ]; then
+        touch "$USER_HOME/.zshrc"
+        chown "$USER_NAME:$USER_NAME" "$USER_HOME/.zshrc" 2>/dev/null || true
     fi
-    if ! grep -q "source /usr/local/share/duplocloud/tf.sh" /home/vscode/.zshrc; then
-        cat >> /home/vscode/.zshrc <<'EOF'
+    if ! grep -q "source /usr/local/share/duplocloud/tf.sh" "$USER_HOME/.zshrc"; then
+        cat >> "$USER_HOME/.zshrc" <<'EOF'
 
 # Source DuploCloud Terraform helpers
 source /usr/local/share/duplocloud/tf.sh

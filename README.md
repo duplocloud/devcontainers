@@ -110,6 +110,12 @@ Useful docs for AWS CLI in reference to this repo:
 - [AWS CLI Devcontainer Feature](https://github.com/devcontainers/features/tree/main/src/aws-cli) - This feature installs the AWS CLI in a devcontainer. 
 - [AWS Toolkit VSCode Extension](https://marketplace.visualstudio.com/items?itemName=AmazonWebServices.aws-toolkit-vscode)
 
+### Duploctl Docs
+
+Useful docs for duploctl in reference to this repo:
+
+- [Duploctl JIT update_aws_config](https://cli.duplocloud.com/Jit/#duplo_resource.jit.DuploJit.update_aws_config) - Documentation for auto-configuring AWS CLI with JIT credentials
+
 ### Terraform Docs
 
 Useful docs for Terraform in reference to this repo:

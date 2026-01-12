@@ -21,6 +21,10 @@ mkdir -p "$USER_HOME/.aws" "$USER_HOME/.aws/cli"
 FEATURE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cp "${FEATURE_DIR}/alias" "$USER_HOME/.aws/cli/alias"
 
+# Copy the AWS JIT configuration script to PATH
+cp "${FEATURE_DIR}/scripts/configure-aws-jit.sh" "/usr/local/bin/configure-aws-jit.sh"
+chmod 755 "/usr/local/bin/configure-aws-jit.sh"
+
 # Set proper permissions on the alias file and AWS config directory
 chmod 644 "$USER_HOME/.aws/cli/alias"
 chown -R "$USER_NAME:$USER_NAME" "$USER_HOME/.aws" 2>/dev/null || true

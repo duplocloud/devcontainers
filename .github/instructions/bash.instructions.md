@@ -26,3 +26,16 @@ cat <<EOF >> filename.txt
 Multi line text goes here.
 EOF
 ```
+
+### Building Commands 
+
+Prefer building bash arrays to hold command arguments:
+- use conditions to add arguments to the array
+- don't add entrypoints, just the arguments
+
+```bash
+MY_CLI_ARGS=("some-command")
+MY_CLI_ARGS+=("--option1" "value1")
+
+my-cli "${MY_CLI_ARGS[@]}"
+```

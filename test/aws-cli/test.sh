@@ -13,6 +13,8 @@ source dev-container-features-test-lib
 # Feature-specific tests
 check "aws alias file exists" test -f "${_REMOTE_USER_HOME:-$HOME}/.aws/cli/alias"
 check "alias file is readable" cat "${_REMOTE_USER_HOME:-$HOME}/.aws/cli/alias"
+check "configure-aws-jit.sh script exists" test -f "/usr/local/bin/configure-aws-jit.sh"
+check "configure-aws-jit.sh is executable" test -x "/usr/local/bin/configure-aws-jit.sh"
 
 # Report results
 reportResults

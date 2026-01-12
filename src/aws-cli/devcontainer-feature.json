@@ -4,13 +4,30 @@
     "version": "1.0.1",
     "description": "Installs AWS CLI with custom aliases and AWS Toolkit extension",
     "documentationURL": "https://github.com/duplocloud-internal/customer-workspace/tree/main/features/aws-cli",
-    "options": {},
+    "options": {
+        "jit": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable Just-In-Time (JIT) AWS CLI configuration using duploctl on container creation. Requires duploctl to be properly configured."
+        },
+        "jitAdmin": {
+            "type": "boolean",
+            "default": false,
+            "description": "Use admin credentials when configuring JIT. Adds --admin flag to duploctl command."
+        },
+        "jitInteractive": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable interactive mode when configuring JIT. Adds --interactive flag to duploctl command."
+        }
+    },
     "installsAfter": [
         "ghcr.io/duplocloud/devcontainers/duploctl"
     ],
     "dependsOn": {
         "ghcr.io/devcontainers/features/aws-cli:1": {}
     },
+    "onCreateCommand": "JIT=${JIT} JITADMIN=${JITADMIN} JITINTERACTIVE=${JITINTERACTIVE} /usr/local/bin/configure-aws-jit.sh",
     "customizations": {
         "vscode": {
             "extensions": [

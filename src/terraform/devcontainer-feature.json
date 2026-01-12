@@ -6,6 +6,9 @@
     "documentationURL": "https://github.com/duplocloud-internal/customer-workspace/tree/main/features/terraform",
     "options": {},
     "installsAfter": [
-        "ghcr.io/devcontainers/features/terraform"
-    ]
+        "ghcr.io/duplocloud/devcontainers/duploctl"
+    ],
+    "dependsOn": {
+        "ghcr.io/devcontainers/features/terraform:1": {}
+    }
 }

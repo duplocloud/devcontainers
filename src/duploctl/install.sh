@@ -2,8 +2,7 @@
 set -e
 
 VERSION="${VERSION:-latest}"
-USER_HOME="${_REMOTE_USER_HOME:-$HOME}"
-BIN_DIR="$USER_HOME/.local/bin"
+BIN_DIR="/usr/local/bin"
 
 # Check if pip is available
 has_pip() { command -v python3 >/dev/null && python3 -m pip --version >/dev/null 2>&1; }
@@ -30,8 +29,8 @@ get_os() {
 install_with_pip() {
   local pkg="duplocloud-client"
   [[ "$VERSION" != "latest" ]] && pkg="duplocloud-client==${VERSION#v}"
-  echo "Installing $pkg via pip --user"
-  python3 -m pip install --user "$pkg"
+  echo "Installing $pkg globally via pip"
+  python3 -m pip install --break-system-packages "$pkg"
 }
 
 install_binary() {

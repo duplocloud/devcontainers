@@ -11,8 +11,8 @@ set -e
 source dev-container-features-test-lib
 
 # Feature-specific tests
-check "aws alias file exists" test -f "${_REMOTE_USER_HOME:-$HOME}/.aws/alias"
-check "alias file is readable" cat "${_REMOTE_USER_HOME:-$HOME}/.aws/alias"
+check "aws alias file exists" test -f "${_REMOTE_USER_HOME:-$HOME}/.aws/cli/alias"
+check "alias file is readable" cat "${_REMOTE_USER_HOME:-$HOME}/.aws/cli/alias"
 
 # Report results
 reportResults

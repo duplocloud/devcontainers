@@ -14,14 +14,15 @@ USER_HOME="${_REMOTE_USER_HOME:-/root}"
 USER_NAME="${_REMOTE_USER:-root}"
 
 # Ensure AWS CLI config directory exists
-mkdir -p "$USER_HOME/.aws"
+# Ensure AWS CLI config and alias directories exist
+mkdir -p "$USER_HOME/.aws" "$USER_HOME/.aws/cli"
 
-# Copy the custom alias file
+# Copy the custom alias file into the AWS CLI aliases directory
 FEATURE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cp "${FEATURE_DIR}/alias" "$USER_HOME/.aws/alias"
+cp "${FEATURE_DIR}/alias" "$USER_HOME/.aws/cli/alias"
 
-# Set proper permissions
-chmod 644 "$USER_HOME/.aws/alias"
+# Set proper permissions on the alias file and AWS config directory
+chmod 644 "$USER_HOME/.aws/cli/alias"
 chown -R "$USER_NAME:$USER_NAME" "$USER_HOME/.aws" 2>/dev/null || true
 
 echo "AWS CLI custom aliases installed successfully!"

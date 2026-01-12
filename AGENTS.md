@@ -29,3 +29,15 @@ When troubleshooting or modifying this repo:
 | Project layout | `## Project Structure` |
 
 For feature-specific notes, check `NOTES.md` in the repo root.
+
+## Documentation Policies
+
+Requirements and Context for writing docs for features: 
+- all src/*/README.md files are generated, don't edit these
+- add your docs in src/*/NOTES.md files, these are generated into README.md
+- when given a task, take notes and docs in the NOTES.md files
+
+When given URL's to read: 
+- always save them as markdown references at the bottom of the main ./README.md file
+- save URLs under the `## References` section
+- use markdown format like `[Title](http://link)`

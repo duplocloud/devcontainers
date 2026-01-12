@@ -1,13 +1,16 @@
 {
     "name": "AWS CLI with Custom Aliases",
     "id": "aws-cli",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Installs AWS CLI with custom aliases and AWS Toolkit extension",
     "documentationURL": "https://github.com/duplocloud-internal/customer-workspace/tree/main/features/aws-cli",
     "options": {},
     "installsAfter": [
-        "ghcr.io/devcontainers/features/aws-cli"
+        "ghcr.io/duplocloud/devcontainers/duploctl"
     ],
+    "dependsOn": {
+        "ghcr.io/devcontainers/features/aws-cli:1": {}
+    },
     "customizations": {
         "vscode": {
             "extensions": [

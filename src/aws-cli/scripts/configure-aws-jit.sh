@@ -5,6 +5,11 @@ set -e
 # This script uses duploctl to automatically configure AWS CLI with JIT credentials
 # It honors AWS_CONFIG_FILE and AWS_PROFILE environment variables
 
+# Source JIT configuration from install-time options
+if [[ -f /usr/local/etc/aws-jit.conf ]]; then
+  source /usr/local/etc/aws-jit.conf
+fi
+
 # Check if JIT configuration is enabled
 JIT="${JIT:-false}"
 

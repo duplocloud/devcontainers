@@ -1,7 +1,7 @@
 {
     "name": "AWS CLI with Custom Aliases",
     "id": "aws-cli",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Installs AWS CLI with custom aliases and AWS Toolkit extension",
     "documentationURL": "https://github.com/duplocloud-internal/customer-workspace/tree/main/features/aws-cli",
     "options": {
@@ -27,7 +27,7 @@
     "dependsOn": {
         "ghcr.io/devcontainers/features/aws-cli:1": {}
     },
-    "onCreateCommand": "JIT=${JIT} JITADMIN=${JITADMIN} JITINTERACTIVE=${JITINTERACTIVE} /usr/local/bin/configure-aws-jit.sh",
+    "onCreateCommand": "/usr/local/bin/configure-aws-jit.sh",
     "customizations": {
         "vscode": {
             "extensions": [

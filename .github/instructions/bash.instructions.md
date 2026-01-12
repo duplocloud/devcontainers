@@ -20,12 +20,23 @@ The following are style and formatting guidelines for bash scripts:
 
 ### Multi Line Outputs
 
+some rules for cat: 
+- starts like `cat <<EOF`
+- files are appended with `>>` and created with `>`
+- the file to go to goes after the redirection operator
+
 When appending text to the bottom of a file: 
 ```bash
 cat <<EOF >> filename.txt
 Multi line text goes here.
 EOF
 ```
+
+When creating new files:
+```bash
+cat <<EOF > filename.txt
+File content goes here.
+EOF
 
 ### Building Commands 
 

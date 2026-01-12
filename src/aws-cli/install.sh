@@ -25,6 +25,15 @@ cp "${FEATURE_DIR}/alias" "$USER_HOME/.aws/cli/alias"
 cp "${FEATURE_DIR}/scripts/configure-aws-jit.sh" "/usr/local/bin/configure-aws-jit.sh"
 chmod 755 "/usr/local/bin/configure-aws-jit.sh"
 
+# Write JIT options to config file for use during onCreate lifecycle hook
+mkdir -p /usr/local/etc
+cat <<EOF > /usr/local/etc/aws-jit.conf
+JIT="${JIT:-false}"
+JITADMIN="${JITADMIN:-false}"
+JITINTERACTIVE="${JITINTERACTIVE:-false}"
+EOF
+chmod 644 /usr/local/etc/aws-jit.conf
+
 # Set proper permissions on the alias file and AWS config directory
 chmod 644 "$USER_HOME/.aws/cli/alias"
 chown -R "$USER_NAME:$USER_NAME" "$USER_HOME/.aws" 2>/dev/null || true

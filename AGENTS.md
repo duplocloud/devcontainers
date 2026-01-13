@@ -32,12 +32,27 @@ For feature-specific notes, check `NOTES.md` in the repo root.
 
 ## Documentation Policies
 
-Requirements and Context for writing docs for features: 
+Context for feature level README.md files:
 - all src/*/README.md files are generated, don't edit these
-- add your docs in src/*/NOTES.md files, these are generated into README.md
+- use these for reading the full docs
+
+Requirements and Policies for managing NOTES.md: 
+- NOTES.md is ultimately appended to the bottom of the README.md
+- Github action injects NOTES.md into README.md
+- add your docs in src/*/NOTES.md files
 - when given a task, take notes and docs in the NOTES.md files
+- don't use `#` headings in NOTES.md, use `##` and below
+- start directly with a new `##` section to prevent floating text in the middle of README.md
+- include examples for the feature
 
 When given URL's to read: 
-- always save them as markdown references at the bottom of the main ./README.md file
-- save URLs under the `## References` section
+- also called: links, references, external docs, urls, sources, uri
+- determine a `Title` for the link
 - use markdown format like `[Title](http://link)`
+- save to README.md
+  - always save them as markdown references at the bottom of the main ./README.md file
+  - save URLs under the `## References` section
+- saving to NOTES.md
+  - use the `[Title](http://link)` format in descriptions so they render as clickable links
+  - do not create a `## References` section in NOTES.md
+  - just include the links inline in the text where relevant

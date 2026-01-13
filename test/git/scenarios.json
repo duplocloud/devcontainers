@@ -1,0 +1,21 @@
+{
+  "scenarios": {
+    "with_user_config": {
+      "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+      "features": {
+        "git": {
+          "userName": "Test User",
+          "userEmail": "test@example.com"
+        }
+      }
+    },
+    "github_provider": {
+      "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+      "features": {
+        "git": {
+          "provider": "github"
+        }
+      }
+    }
+  }
+}

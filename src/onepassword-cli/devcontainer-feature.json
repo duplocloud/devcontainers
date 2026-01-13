@@ -1,8 +1,40 @@
 {
-    "name": "1Password CLI",
-    "id": "onepassword-cli",
-    "version": "1.0.0",
-    "description": "Installs 1Password CLI with proper GPG key verification",
-    "documentationURL": "https://github.com/duplocloud-internal/customer-workspace/tree/main/features/onepassword-cli",
-    "options": {}
+  "name": "1Password CLI",
+  "id": "onepassword-cli",
+  "version": "1.1.0",
+  "description": "Installs 1Password CLI with optional auto SSH key configuration",
+  "documentationURL": "https://github.com/duplocloud/devcontainers/tree/main/src/onepassword-cli",
+  "options": {
+    "vault": {
+      "type": "string",
+      "default": "",
+      "description": "Default vault name to use. Sets OP_VAULT_NAME environment variable."
+    },
+    "account": {
+      "type": "string",
+      "default": "my.1password.com",
+      "description": "1Password account domain. Sets OP_ACCOUNT environment variable."
+    },
+    "disableInteractive": {
+      "type": "boolean",
+      "default": false,
+      "description": "Disable interactive login prompt when no auth method is detected."
+    },
+    "autoSsh": {
+      "type": "boolean",
+      "default": false,
+      "description": "Automatically fetch and configure SSH keys from 1Password."
+    },
+    "sshSecretNames": {
+      "type": "string",
+      "default": "",
+      "description": "Comma-separated list of 1Password secret names containing SSH keys."
+    },
+    "sshSecretTags": {
+      "type": "string",
+      "default": "ssh",
+      "description": "Tags to search for SSH secrets (used when sshSecretNames is empty)."
+    }
+  },
+  "onCreateCommand": "bash /usr/local/share/onepassword-on-create.sh"
 }

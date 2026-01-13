@@ -78,23 +78,15 @@ The generated command inherits the `--host`, `--admin`, and `--interactive` flag
 
 ### Troubleshooting
 
-If you see errors during container creation:
-- Ensure duploctl is properly configured with `duploctl configure`
-- Verify you have the necessary permissions in your Duplo portal
-- Check that the duploctl feature is installed
+If you see errors during container creation, you probably don't have [Duplocloud credentials configured](https://cli.duplocloud.com/). 
 
 ### Manual Configuration
 
-You can also manually configure AWS JIT credentials after container creation:
+You can also manually configure AWS JIT credentials after container creation. This uses the [duploctl update_aws_config](https://cli.duplocloud.com/Jit/#duplo_resource.jit.DuploJit.update_aws_config) command to generate the profile.
 
+Quick create your profile:
 ```bash
 duploctl jit update_aws_config myprofile
-```
-
-Or for admin access:
-
-```bash
-duploctl jit update_aws_config myportal --admin --interactive
 ```
 
 ## References

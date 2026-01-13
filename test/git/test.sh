@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # This test file will be executed against an auto-generated devcontainer.json that
-# includes the 'onepassword-cli' Feature with no options.
+# includes the 'git' Feature with no options.
 #
 # For more information, see: https://github.com/devcontainers/cli/blob/main/docs/features/test.md
 
@@ -11,15 +11,18 @@ set -e
 source dev-container-features-test-lib
 
 # Feature-specific tests
-check "op is installed" command -v op
-check "op version" op --version
-check "jq is installed" command -v jq
+check "git is installed" command -v git
+check "git version" git --version
+
+# Check git plugins are installed
+check "git-bump is installed" command -v git-bump
+check "git-setenv is installed" command -v git-setenv
 
 # Check on-create script exists
-check "on-create script exists" test -f /usr/local/share/onepassword-on-create.sh
+check "on-create script exists" test -f /usr/local/share/git-on-create.sh
 
 # Check config file exists
-check "config file exists" test -f /usr/local/etc/onepassword-feature.conf
+check "config file exists" test -f /usr/local/etc/git-feature.conf
 
 # Report results
 reportResults

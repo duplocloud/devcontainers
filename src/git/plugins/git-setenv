@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+PWD=`pwd`
+PROJECT=`basename $PWD`
+GIT_BRANCH=`git rev-parse --abbrev-ref HEAD`
+GIT_TAG=`git describe --abbrev=0 --tags 2>/dev/null`
+GIT_COMMIT=`git rev-parse HEAD`
+
+# exports all the builtin bitbucket variables
+function bitbucket_env() {
+  cat <<EOF
+export CI=true
+export BITBUCKET_BUILD_NUMBER="100"
+export BITBUCKET_COMMIT=$GIT_COMMIT
+export BITBUCKET_BRANCH=$GIT_BRANCH
+export BITBUCKET_REPO_UUID="{12345678-1234-1234-1234-123456789012}"
+export BITBUCKET_CLONE_DIR=$PWD
+export BITBUCKET_WORKSPACE=$USER
+export BITBUCKET_REPO_SLUG=$PROJECT
+export BITBUCKET_REPO_FULL_NAME="${USER}/${PROJECT}"
+export BITBUCKET_TAG=$GIT_TAG
+EOF
+}
+
+function gitlab_env() {
+  cat <<EOF
+export CI=true
+export CI_COMMIT_BRANCH=$GIT_BRANCH
+export CI_BUILDS_DIR=$PWD
+export CI_BUILD_REF=$GIT_COMMIT
+export CI_DEPLOY_USER=$USER
+export CI_PROJECT_NAME=$PROJECT
+export CI_PROJECT_NAMESPACE=$USER
+export CI_PROJECT_PATH="$USER/$PROJECT"
+EOF
+}
+
+"$1_env"

@@ -1,0 +1,38 @@
+{
+  "name": "Git Configuration",
+  "id": "git",
+  "version": "1.0.0",
+  "description": "Configures git with user settings, signing keys, plugins, and global gitignore",
+  "documentationURL": "https://github.com/duplocloud/devcontainers/tree/main/src/git",
+  "options": {
+    "provider": {
+      "type": "string",
+      "enum": ["none", "github", "gitlab", "bitbucket", "azuredevops"],
+      "default": "none",
+      "description": "Git provider to configure default settings for (to be implemented)"
+    },
+    "userName": {
+      "type": "string",
+      "default": "",
+      "description": "Git user.name value. Falls back to GIT_USER environment variable if not set."
+    },
+    "userEmail": {
+      "type": "string",
+      "default": "",
+      "description": "Git user.email value. Falls back to GIT_EMAIL environment variable if not set."
+    },
+    "signingKey": {
+      "type": "string",
+      "default": "",
+      "description": "Path to signing key relative to $HOME/.ssh (e.g., 'github.pub'). Leave empty to disable signing."
+    }
+  },
+  "installsAfter": [
+    "ghcr.io/duplocloud/devcontainers/onepassword-cli",
+    "ghcr.io/devcontainers/features/git"
+  ],
+  "dependsOn": {
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "onCreateCommand": "bash /usr/local/share/git-on-create.sh"
+}

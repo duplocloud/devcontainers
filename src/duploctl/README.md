@@ -71,6 +71,10 @@ If Python is not available, the feature downloads and installs a prebuilt binary
 
 Choose the binary installation method if your container doesn't include Python or if you prefer a self-contained executable.
 
+## References 
+
+- [Duploctl JIT update_aws_config](https://cli.duplocloud.com/Jit/#duplo_resource.jit.DuploJit.update_aws_config) - Documentation for auto-configuring AWS CLI with JIT credentials
+
 
 ---
 

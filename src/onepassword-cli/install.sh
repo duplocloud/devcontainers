@@ -41,6 +41,7 @@ mkdir -p /usr/local/etc
 cat <<EOF > /usr/local/etc/onepassword-feature.conf
 VAULT="${VAULT:-}"
 ACCOUNT="${ACCOUNT:-my.1password.com}"
+USEREMAIL="${USEREMAIL:-}"
 DISABLEINTERACTIVE="${DISABLEINTERACTIVE:-false}"
 AUTOSSH="${AUTOSSH:-false}"
 SSHSECRETNAMES="${SSHSECRETNAMES:-}"

@@ -1,7 +1,7 @@
 {
   "name": "1Password CLI",
   "id": "onepassword-cli",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Installs 1Password CLI with optional auto SSH key configuration",
   "documentationURL": "https://github.com/duplocloud/devcontainers/tree/main/src/onepassword-cli",
   "options": {
@@ -14,6 +14,11 @@
       "type": "string",
       "default": "my.1password.com",
       "description": "1Password account domain. Sets OP_ACCOUNT environment variable."
+    },
+    "userEmail": {
+      "type": "string",
+      "default": "",
+      "description": "User email for 1Password account (optional, used when adding account)."
     },
     "disableInteractive": {
       "type": "boolean",

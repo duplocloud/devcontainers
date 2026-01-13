@@ -19,10 +19,71 @@ chmod 700 "${USER_HOME}/.ssh"
 # Track authentication status
 OP_AUTHENTICATED="false"
 OP_AUTH_METHOD=""
+OP_ACCOUNT_SHORTHAND=""
+
+# Extract subdomain from account URL for shorthand
+function get_account_shorthand() {
+  local account="${ACCOUNT:-my.1password.com}"
+  # Extract subdomain (everything before the first dot)
+  echo "${account%%.*}"
+}
+
+# Check if terminal is interactive
+function is_terminal_interactive() {
+  # Check if stdin is a terminal and stdout is a terminal
+  [ -t 0 ] && [ -t 1 ]
+}
+
+# Check if account exists in op account list
+function account_exists() {
+  local account="$1"
+  local shorthand="$2"
+  
+  # Check by URL or shorthand
+  op account list 2>/dev/null | grep -qE "(${account}|${shorthand})"
+}
+
+# Add 1Password account
+function add_account() {
+  local account="${ACCOUNT:-my.1password.com}"
+  local shorthand="$1"
+  local email="${USEREMAIL:-}"
+  
+  echo "Adding 1Password account: $account (shorthand: $shorthand)"
+  
+  local cmd="op account add --address '$account' --shorthand '$shorthand'"
+  
+  if [ -n "$email" ]; then
+    cmd="$cmd --email '$email'"
+  fi
+  
+  if eval "$cmd"; then
+    echo "Account added successfully"
+    return 0
+  else
+    echo "Warning: Failed to add account"
+    return 1
+  fi
+}
+
+# Sign in to 1Password account
+function signin_account() {
+  local shorthand="$1"
+  
+  echo "Signing in to 1Password account: $shorthand"
+  
+  if eval "$(op signin --account '$shorthand')"; then
+    echo "Successfully signed in"
+    return 0
+  else
+    echo "Warning: Failed to sign in"
+    return 1
+  fi
+}
 
 # Check for authentication methods
 function check_authentication() {
-  # Check for Connect server
+  # Check for Connect server (works in any terminal type)
   if [ -n "${OP_CONNECT_HOST:-}" ] && [ -n "${OP_CONNECT_TOKEN:-}" ]; then
     echo "1Password Connect environment detected"
     OP_AUTH_METHOD="connect"
@@ -30,7 +91,7 @@ function check_authentication() {
     return 0
   fi
 
-  # Check for Service Account Token
+  # Check for Service Account Token (works in any terminal type)
   if [ -n "${OP_SERVICE_ACCOUNT_TOKEN:-}" ]; then
     echo "1Password Service Account Token detected"
     OP_AUTH_METHOD="service-account"
@@ -38,35 +99,40 @@ function check_authentication() {
     return 0
   fi
 
-  # Check if already signed in
-  if op account list 2>/dev/null | grep -q "${ACCOUNT:-my.1password.com}"; then
-    echo "Already signed in to 1Password"
-    OP_AUTH_METHOD="session"
-    OP_AUTHENTICATED="true"
-    return 0
+  # Session-based authentication requires interactive terminal
+  if ! is_terminal_interactive; then
+    echo "Non-interactive terminal detected, skipping session-based authentication"
+    return 1
   fi
-
-  return 1
-}
-
-# Attempt interactive login
-function try_interactive_login() {
+  
   if [ "$DISABLEINTERACTIVE" = "true" ]; then
-    echo "Interactive login disabled by configuration"
+    echo "Interactive authentication disabled by configuration"
     return 1
   fi
 
-  # Check if terminal is interactive
-  if [ ! -t 0 ]; then
-    echo "Non-interactive terminal detected, skipping interactive login"
-    return 1
-  fi
-
-  echo "Attempting interactive 1Password login..."
-  if eval "$(op signin --account "${ACCOUNT:-my.1password.com}")"; then
-    OP_AUTH_METHOD="interactive"
-    OP_AUTHENTICATED="true"
-    return 0
+  # Get account shorthand
+  OP_ACCOUNT_SHORTHAND=$(get_account_shorthand)
+  local account="${ACCOUNT:-my.1password.com}"
+  
+  # Check if account exists
+  if account_exists "$account" "$OP_ACCOUNT_SHORTHAND"; then
+    echo "1Password account found: $OP_ACCOUNT_SHORTHAND"
+    # Account exists, just sign in
+    if signin_account "$OP_ACCOUNT_SHORTHAND"; then
+      OP_AUTH_METHOD="session"
+      OP_AUTHENTICATED="true"
+      return 0
+    fi
+  else
+    # Account doesn't exist, add it then sign in
+    echo "1Password account not found, adding: $OP_ACCOUNT_SHORTHAND"
+    if add_account "$OP_ACCOUNT_SHORTHAND"; then
+      if signin_account "$OP_ACCOUNT_SHORTHAND"; then
+        OP_AUTH_METHOD="session"
+        OP_AUTHENTICATED="true"
+        return 0
+      fi
+    fi
   fi
 
   return 1
@@ -253,7 +319,7 @@ function ensure_known_hosts() {
 }
 
 # Main execution
-check_authentication || try_interactive_login || true
+check_authentication || true
 
 if [ "$OP_AUTHENTICATED" = "true" ]; then
   echo "1Password authenticated via: $OP_AUTH_METHOD"

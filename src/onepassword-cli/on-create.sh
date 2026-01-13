@@ -68,15 +68,23 @@ function add_account() {
 
 # Sign in to 1Password account
 function signin_account() {
-  local shorthand="$1"
+  local account="$1"
   
-  echo "Signing in to 1Password account: $shorthand"
+  echo "Signing in to 1Password account: $account"
   
-  if eval "$(op signin --account '$shorthand')"; then
+  # Capture signin output
+  local signin_output
+  signin_output=$(op signin --account "$account" 2>&1)
+  local signin_status=$?
+  
+  if [ $signin_status -eq 0 ]; then
+    # Eval the output to set session variables
+    eval "$signin_output"
     echo "Successfully signed in"
     return 0
   else
     echo "Warning: Failed to sign in"
+    echo "$signin_output" >&2
     return 1
   fi
 }
@@ -118,7 +126,7 @@ function check_authentication() {
   if account_exists "$account" "$OP_ACCOUNT_SHORTHAND"; then
     echo "1Password account found: $OP_ACCOUNT_SHORTHAND"
     # Account exists, just sign in
-    if signin_account "$OP_ACCOUNT_SHORTHAND"; then
+    if signin_account "$account"; then
       OP_AUTH_METHOD="session"
       OP_AUTHENTICATED="true"
       return 0
@@ -127,7 +135,7 @@ function check_authentication() {
     # Account doesn't exist, add it then sign in
     echo "1Password account not found, adding: $OP_ACCOUNT_SHORTHAND"
     if add_account "$OP_ACCOUNT_SHORTHAND"; then
-      if signin_account "$OP_ACCOUNT_SHORTHAND"; then
+      if signin_account "$account"; then
         OP_AUTH_METHOD="session"
         OP_AUTHENTICATED="true"
         return 0

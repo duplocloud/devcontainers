@@ -91,3 +91,8 @@ The feature installs `tf.sh` in two locations:
 - `/usr/local/share/duplocloud/tf.sh` - Sourceable shell script (for functions)
 
 Both files are sourced in shell rc files (`.bashrc`, `.zshrc`, `/etc/bash.bashrc`) to make the helper functions available in interactive shells.
+
+## References 
+
+- [Terraform Devcontainer Feature](https://github.com/devcontainers/features/tree/main/src/terraform) - Official Terraform feature for devcontainers
+- [Duplocloud Docs for Provider](https://docs.duplocloud.com/docs/automation-platform/terraform-support/duplocloud-terraform-provider) - Describes the DuploCloud Terraform methodology when using our provider. 

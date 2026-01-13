@@ -51,3 +51,7 @@ If Python is not available, the feature downloads and installs a prebuilt binary
 - Automatically detects your system architecture (amd64 or arm64) and OS (linux, darwin, windows)
 
 Choose the binary installation method if your container doesn't include Python or if you prefer a self-contained executable.
+
+## References 
+
+- [Duploctl JIT update_aws_config](https://cli.duplocloud.com/Jit/#duplo_resource.jit.DuploJit.update_aws_config) - Documentation for auto-configuring AWS CLI with JIT credentials

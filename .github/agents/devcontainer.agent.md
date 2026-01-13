@@ -1,7 +1,7 @@
 ---
 name: devcontainer
 description: Devcontainer features expert for DuploCloud workspaces
-model: GPT-5 mini (copilot)
+model: Claude Sonnet 4.5 (copilot)
 infer: true
 tools:
   ['execute/getTerminalOutput', 'execute/runInTerminal', 'read/problems', 'read/readFile', 'read/terminalSelection', 'read/terminalLastCommand', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search/changes', 'search/fileSearch', 'search/listDirectory', 'search/searchResults', 'search/textSearch', 'search/usages', 'web', 'todo']

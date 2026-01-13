@@ -102,3 +102,10 @@ For automatic commit signing, pair with the git feature:
   }
 }
 ```
+
+## References 
+
+- [1Password CLI Documentation](https://developer.1password.com/docs/cli) - Official CLI reference and setup guides
+- [1Password Connect Server](https://developer.1password.com/docs/connect) - Deploy Connect server for automated secret access
+- [SSH Key Management in 1Password](https://support.1password.com/ssh-agent/) - Setting up SSH keys in 1Password
+

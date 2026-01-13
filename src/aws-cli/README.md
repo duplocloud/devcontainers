@@ -105,29 +105,24 @@ The generated command inherits the `--host`, `--admin`, and `--interactive` flag
 
 ### Troubleshooting
 
-If you see errors during container creation:
-- Ensure duploctl is properly configured with `duploctl configure`
-- Verify you have the necessary permissions in your Duplo portal
-- Check that the duploctl feature is installed
+If you see errors during container creation, you probably don't have [Duplocloud credentials configured](https://cli.duplocloud.com/). 
 
 ### Manual Configuration
 
-You can also manually configure AWS JIT credentials after container creation:
+You can also manually configure AWS JIT credentials after container creation. This uses the [duploctl update_aws_config](https://cli.duplocloud.com/Jit/#duplo_resource.jit.DuploJit.update_aws_config) command to generate the profile.
 
+Quick create your profile:
 ```bash
 duploctl jit update_aws_config myprofile
-```
-
-Or for admin access:
-
-```bash
-duploctl jit update_aws_config myportal --admin --interactive
 ```
 
 ## References
 
 - [Duploctl JIT Documentation](https://cli.duplocloud.com/Jit/#duplo_resource.jit.DuploJit.update_aws_config)
-
+- [Configuring environment variables for the AWS CLI](https://docs.aws.amazon.com/cli/v1/userguide/cli-configure-envvars.html)
+- [Creating and using aliases in the AWS CLI](https://docs.aws.amazon.com/cli/v1/userguide/cli-usage-alias.html)
+- [AWS CLI Devcontainer Feature](https://github.com/devcontainers/features/tree/main/src/aws-cli) - This feature installs the AWS CLI in a devcontainer. 
+- [AWS Toolkit VSCode Extension](https://marketplace.visualstudio.com/items?itemName=AmazonWebServices.aws-toolkit-vscode)
 
 ---
 

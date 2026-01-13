@@ -151,6 +151,14 @@ function check_authentication() {
     return 0
   fi
 
+  # Check for Desktop App agent socket (Linux only - works in any terminal type)
+  if [ -S "$HOME/.1password/agent.sock" ]; then
+    echo "1Password Desktop App agent socket detected"
+    OP_AUTH_METHOD="desktop"
+    OP_AUTHENTICATED="true"
+    return 0
+  fi
+
   # Session-based authentication requires interactive terminal
   if ! is_terminal_interactive; then
     echo "Non-interactive terminal detected, skipping session-based authentication"
@@ -206,6 +214,22 @@ function configure_vault() {
   fi
 }
 
+# Check if SSH agent is available and working
+function is_ssh_agent_available() {
+  # No SSH_AUTH_SOCK means no agent
+  if [ -z "${SSH_AUTH_SOCK:-}" ]; then
+    return 1
+  fi
+  
+  # Try to list keys from agent
+  if ssh-add -l &>/dev/null; then
+    return 0
+  fi
+  
+  # Agent socket exists but ssh-add failed
+  return 1
+}
+
 # Fetch and configure SSH key from 1Password
 function configure_ssh_key() {
   local secret_name="$1"
@@ -216,13 +240,26 @@ function configure_ssh_key() {
   local private_key_path="${ssh_dir}/${file_name}"
   local public_key_path="${ssh_dir}/${file_name}.pub"
   
-  # Skip if key already exists
-  if [ -f "$private_key_path" ]; then
-    echo "SSH key already exists: $private_key_path"
-    return 0
-  fi
+  # Determine what keys we need to download
+  local download_private=false
+  local download_public=false
   
-  echo "Fetching SSH key: $secret_name"
+  if is_ssh_agent_available; then
+    echo "SSH agent is available for: $secret_name"
+    # Only need public key when agent is available
+    if [ ! -f "$public_key_path" ]; then
+      download_public=true
+    fi
+  else
+    echo "SSH agent not available, will download keys for: $secret_name"
+    # Need both keys when no agent
+    if [ ! -f "$private_key_path" ]; then
+      download_private=true
+    fi
+    if [ ! -f "$public_key_path" ]; then
+      download_public=true
+    fi
+  fi
   
   # Determine vault path prefix
   local vault_prefix=""
@@ -230,30 +267,41 @@ function configure_ssh_key() {
     vault_prefix="${OP_VAULT_NAME}/"
   fi
   
-  # Fetch private key
-  if ! op read "op://${vault_prefix}${secret_name}/private key?ssh-format=openssh" > "$private_key_path" 2>/dev/null; then
-    echo "Warning: Failed to fetch private key for '$secret_name'"
-    rm -f "$private_key_path"
-    return 1
+  # Download private key if needed
+  if [ "$download_private" = "true" ]; then
+    echo "Fetching private key: $secret_name"
+    if ! op read "op://${vault_prefix}${secret_name}/private key?ssh-format=openssh" > "$private_key_path" 2>/dev/null; then
+      echo "Warning: Failed to fetch private key for '$secret_name'"
+      rm -f "$private_key_path"
+      return 1
+    fi
+    chmod 600 "$private_key_path"
+    echo "Private key downloaded: $file_name"
   fi
-  chmod 600 "$private_key_path"
   
-  # Fetch public key
-  if ! op read "op://${vault_prefix}${secret_name}/public key" > "$public_key_path" 2>/dev/null; then
-    echo "Warning: Failed to fetch public key for '$secret_name'"
-    rm -f "$public_key_path"
-    return 1
+  # Download public key if needed
+  if [ "$download_public" = "true" ]; then
+    echo "Fetching public key: $secret_name"
+    if ! op read "op://${vault_prefix}${secret_name}/public key" > "$public_key_path" 2>/dev/null; then
+      echo "Warning: Failed to fetch public key for '$secret_name'"
+      rm -f "$public_key_path"
+      return 1
+    fi
+    chmod 644 "$public_key_path"
+    echo "Public key downloaded: $file_name"
   fi
-  chmod 644 "$public_key_path"
   
-  echo "SSH key configured: $file_name"
   
   # Check for host configuration
   local host
   host=$(op item get "$secret_name" --format json 2>/dev/null | jq -r '.fields[] | select(.label == "host") | .value' 2>/dev/null || echo "")
   
   if [ -n "$host" ] && [ "$host" != "null" ]; then
-    configure_ssh_host "$host" "$file_name"
+    local has_agent=false
+    if is_ssh_agent_available; then
+      has_agent=true
+    fi
+    configure_ssh_host "$host" "$file_name" "$secret_name" "$has_agent"
   fi
   
   return 0
@@ -263,7 +311,16 @@ function configure_ssh_key() {
 function configure_ssh_host() {
   local host="$1"
   local key_name="$2"
+  local secret_name="$3"
+  local has_agent="$4"
   local ssh_config="${USER_HOME}/.ssh/config"
+  
+  # Check if config file already exists and has content
+  if [ -f "$ssh_config" ] && [ -s "$ssh_config" ]; then
+    echo "Warning: SSH config file already exists with content, will not modify: $ssh_config"
+    echo "Please manually add configuration for host: $host"
+    return 0
+  fi
   
   # Create config file if it doesn't exist
   if [ ! -f "$ssh_config" ]; then
@@ -271,21 +328,57 @@ function configure_ssh_host() {
     chmod 600 "$ssh_config"
   fi
   
-  # Check if host entry already exists
-  if grep -q "^Host ${host}$" "$ssh_config" 2>/dev/null; then
-    echo "SSH config entry for '$host' already exists"
-    return 0
-  fi
-  
   echo "Adding SSH config entry for: $host"
+  
+  # Get secret details
+  local secret_json
+  secret_json=$(op item get "$secret_name" --format json 2>/dev/null || echo "{}")
+  
+  # Get username from secret if available
+  local username
+  username=$(echo "$secret_json" | jq -r '.fields[] | select(.label == "username") | .value' 2>/dev/null || echo "")
+  
+  # Get port from secret if available
+  local port
+  port=$(echo "$secret_json" | jq -r '.fields[] | select(.label == "port") | .value' 2>/dev/null || echo "")
+  
+  # Build SSH config entry
   cat <<EOF >> "$ssh_config"
 
 Host ${host}
     HostName ${host}
-    User git
-    IdentityFile ~/.ssh/${key_name}
-    IdentitiesOnly yes
 EOF
+  
+  # Add Port if specified
+  if [ -n "$port" ] && [ "$port" != "null" ]; then
+    echo "    Port ${port}" >> "$ssh_config"
+  fi
+  
+  # Add User if username was found
+  if [ -n "$username" ] && [ "$username" != "null" ]; then
+    echo "    User ${username}" >> "$ssh_config"
+  fi
+  
+  # Add IdentityFile - public key if agent available, private key otherwise
+  if [ "$has_agent" = "true" ]; then
+    # Agent available: use public key so agent can lookup private key
+    echo "    IdentityFile ~/.ssh/${key_name}.pub" >> "$ssh_config"
+  else
+    # No agent: use private key directly
+    echo "    IdentityFile ~/.ssh/${key_name}" >> "$ssh_config"
+  fi
+  echo "    IdentitiesOnly yes" >> "$ssh_config"
+  
+  # Add IdentityAgent if SSH agent is available
+  if [ "$has_agent" = "true" ]; then
+    # Check if SSH_AUTH_SOCK is the 1Password socket (Linux case)
+    if [ "${SSH_AUTH_SOCK:-}" = "$HOME/.1password/agent.sock" ]; then
+      echo "1Password agent detected for SSH host configuration, we must be on Linux"
+      echo "    IdentityAgent \"${SSH_AUTH_SOCK}\"" >> "$ssh_config"
+    elif [ -n "${SSH_AUTH_SOCK:-}" ]; then
+      echo "    IdentityAgent \"${SSH_AUTH_SOCK}\"" >> "$ssh_config"
+    fi
+  fi
 }
 
 # Search for SSH secrets by tag

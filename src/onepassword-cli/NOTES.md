@@ -20,9 +20,31 @@ The feature supports multiple authentication methods (checked in order):
 
 1. **Connect Server**: Set `OP_CONNECT_HOST` and `OP_CONNECT_TOKEN` environment variables
 2. **Service Account**: Set `OP_SERVICE_ACCOUNT_TOKEN` environment variable
-3. **Interactive Login**: Prompts for email/password (can be disabled with `disableInteractive: true`)
+3. **Desktop App Agent** (Linux only): Automatically detected if `~/.1password/agent.sock` exists
+4. **Interactive Login**: Prompts for email/password (can be disabled with `disableInteractive: true`)
 
 If no authentication method succeeds, only the CLI is installed and a warning is displayed.
+
+### Desktop App Agent Authentication
+
+The Desktop App authentication method works by detecting the 1Password agent socket at `~/.1password/agent.sock`. This method is **only available on Linux** because:
+- macOS and Windows run containers in a VM, preventing socket mounting
+- The 1Password socket directory is privileged on macOS/Windows
+- On Linux, the socket can be mounted directly into the container
+
+To enable Desktop App authentication on Linux:
+1. Install 1Password desktop app on your Linux host
+2. Enable the SSH agent in 1Password settings
+3. Mount the socket in your devcontainer.json:
+   ```json
+   {
+     "mounts": [
+       "source=${localEnv:HOME}/.1password,target=/home/vscode/.1password,type=bind"
+     ]
+   }
+   ```
+
+This authentication method allows biometric authentication within the devcontainer on Linux hosts.
 
 ### Session Persistence
 
@@ -87,7 +109,25 @@ Each 1Password SSH secret must have these fields:
 | `private key` | Yes | The SSH private key |
 | `public key` | Yes | The SSH public key |
 | `host` | No | Hostname for automatic SSH config entry |
+| `username` | No | SSH username for the host (defaults to no User if omitted) |
+| `port` | No | SSH port for the host (defaults to 22 if omitted) |
 | `key type` | No | Type of SSH key (ed25519, rsa, etc.) |
+
+### How SSH Authentication Works
+
+The feature intelligently configures SSH based on whether an SSH agent is available:
+
+**With SSH Agent Available:**
+- Downloads only the **public key** (`.pub`)
+- `IdentityFile` points to the public key
+- `IdentityAgent` is configured to use the agent
+- Private key is accessed securely through the agent
+
+**Without SSH Agent:**
+- Downloads both **private and public keys**
+- `IdentityFile` points to the private key (no `.pub` extension)
+- No `IdentityAgent` directive
+- Private key is used directly from disk
 
 ### File Naming
 
@@ -114,6 +154,67 @@ For automatic commit signing, pair with the git feature:
   }
 }
 ```
+
+## Configuring SSH Agent
+The feature automatically configures SSH to use the 1Password SSH agent when available. The SSH config generation follows this logic:
+
+1. **If `SSH_AUTH_SOCK` is set**: Uses `IdentityAgent` pointing to the SSH agent socket
+2. **If no agent**: Falls back to `IdentityFile` with the downloaded key
+
+### SSH Agent Setup (macOS)
+
+To enable the 1Password SSH agent on macOS, you need to configure a Launch Agent to expose the socket. Create this plist file on your **host machine**:
+
+**File**: `~/Library/LaunchAgents/com.1password.SSH_AUTH_SOCK.plist`
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.1password.SSH_AUTH_SOCK</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/sh</string>
+    <string>-c</string>
+    <string>/bin/ln -sf ~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock $SSH_AUTH_SOCK</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+</dict>
+</plist>
+```
+
+Then mount the socket into your devcontainer:
+
+```json
+{
+  "containerEnv": {
+    "SSH_AUTH_SOCK": "/tmp/.1password-ssh-auth.sock"
+  },
+  "mounts": [
+    "source=${localEnv:HOME}/.1password/agent.sock,target=/tmp/.1password-ssh-auth.sock,type=bind"
+  ]
+}
+```
+
+The feature will verify the SSH agent is working by running `ssh-add -l` before configuring `IdentityAgent` in the SSH config.
+
+### Verifying SSH Agent
+
+After the container starts, verify the SSH agent is configured:
+
+```bash
+ssh-add -l
+```
+
+This should list the keys available in your 1Password SSH agent.
+
+For more information, see: [1Password SSH Agent Compatibility](https://developer.1password.com/docs/ssh/agent/compatibility/#ssh-auth-sock)
+Here are some docs on how to get the 1Password SSH Agent to work in a container on mac: https://developer.1password.com/docs/ssh/agent/compatibility/#ssh-auth-sock
+
+
 
 ## References 
 

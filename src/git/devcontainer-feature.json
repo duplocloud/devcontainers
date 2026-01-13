@@ -1,7 +1,7 @@
 {
   "name": "Git Configuration",
   "id": "git",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Configures git with user settings, signing keys, plugins, and global gitignore",
   "documentationURL": "https://github.com/duplocloud/devcontainers/tree/main/src/git",
   "options": {

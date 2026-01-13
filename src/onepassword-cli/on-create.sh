@@ -72,19 +72,63 @@ function signin_account() {
   
   echo "Signing in to 1Password account: $account"
   
-  # Capture signin output
-  local signin_output
-  signin_output=$(op signin --account "$account" 2>&1)
+  # Get raw session token
+  local session_token
+  session_token=$(op signin --account "$account" --raw 2>&1)
   local signin_status=$?
   
   if [ $signin_status -eq 0 ]; then
-    # Eval the output to set session variables
-    eval "$signin_output"
     echo "Successfully signed in"
+    
+    # Get account UUID for session variable name
+    local account_info
+    local account_uuid
+    
+    # Strip https:// prefix if present for matching
+    local account_clean="${account#https://}"
+    
+    # Get account list and find matching account
+    account_info=$(op account list --format=json 2>/dev/null)
+    
+    # Try to match by URL (with or without https://)
+    account_uuid=$(echo "$account_info" | jq -r --arg acct "$account" --arg acct_clean "$account_clean" \
+      '.[] | select(.url == $acct or .url == ("https://" + $acct) or .url == $acct_clean or .url == ("https://" + $acct_clean)) | .user_uuid' 2>/dev/null | head -n 1)
+    
+    # If not found by URL, try by shorthand
+    if [ -z "$account_uuid" ] || [ "$account_uuid" = "null" ]; then
+      local shorthand="${account%%.*}"
+      account_uuid=$(echo "$account_info" | jq -r --arg sh "$shorthand" \
+        '.[] | select(.shorthand == $sh) | .user_uuid' 2>/dev/null | head -n 1)
+    fi
+    
+    if [ -n "$account_uuid" ] && [ "$account_uuid" != "null" ]; then
+      local session_var="OP_SESSION_${account_uuid}"
+      
+      # Export for current script
+      export "${session_var}=${session_token}"
+      
+      # Persist to .bashrc for future shells
+      local bashrc="${USER_HOME}/.bashrc"
+      
+      # Remove any existing session variable for this account
+      if [ -f "$bashrc" ]; then
+        sed -i "/^export ${session_var}=/d" "$bashrc"
+      fi
+      
+      # Append new session variable
+      echo "export ${session_var}=\"${session_token}\"" >> "$bashrc"
+      
+      echo "Session token persisted to .bashrc as ${session_var}"
+    else
+      echo "Warning: Could not determine account UUID, session may not persist"
+      # Fall back to legacy eval method
+      eval "export OP_SESSION_${account}=\"${session_token}\""
+    fi
+    
     return 0
   else
     echo "Warning: Failed to sign in"
-    echo "$signin_output" >&2
+    echo "$session_token" >&2
     return 1
   fi
 }

@@ -24,6 +24,18 @@ The feature supports multiple authentication methods (checked in order):
 
 If no authentication method succeeds, only the CLI is installed and a warning is displayed.
 
+### Session Persistence
+
+When using interactive login, the session token is persisted to `~/.bashrc` as `OP_SESSION_<UUID>` where `<UUID>` is the user's account UUID. This ensures the session remains valid across terminal sessions without requiring re-authentication.
+
+The session token is automatically:
+- Extracted during the sign-in process using `op signin --raw`
+- Mapped to the correct account UUID from `op account list`
+- Exported to the current script environment for immediate use
+- Appended to `.bashrc` for persistence across terminal sessions
+
+**Note**: The account URL may be specified with or without the `https://` prefix. The feature handles both formats when looking up the account UUID.
+
 ## Environment Variables
 
 The feature configures these environment variables globally:

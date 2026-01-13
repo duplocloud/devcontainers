@@ -16,8 +16,12 @@ USER_NAME="${_REMOTE_USER:-root}"
 # Install tf.sh to a standard location
 FEATURE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 mkdir -p /usr/local/share/duplocloud
-cp "${FEATURE_DIR}/tf.sh" /usr/local/share/duplocloud/tf.sh
+cp "${FEATURE_DIR}/scripts/tf.sh" /usr/local/share/duplocloud/tf.sh
 chmod 644 /usr/local/share/duplocloud/tf.sh
+
+# Install tf executable (renamed from tf.sh for CLI usage)
+cp "${FEATURE_DIR}/scripts/tf.sh" /usr/local/bin/tf
+chmod 755 /usr/local/bin/tf
 
 # Source tf.sh in bashrc for interactive shells
 if [ -f "$USER_HOME/.bashrc" ] && ! grep -q "source /usr/local/share/duplocloud/tf.sh" "$USER_HOME/.bashrc"; then

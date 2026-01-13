@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-function tf() {
+function tf-cmd() {
   local tf_args cmd var_cmds wksp_dir module_dir wksp module var_file
   var_cmds="apply destroy plan show validate state"
   tf_args="$*"
@@ -134,3 +134,5 @@ function tf-init() {
   echo "terraform $@ ${TF_ARGS[@]}"
   terraform "$@" "${TF_ARGS[@]}"
 }
+
+tf-cmd $@

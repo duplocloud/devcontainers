@@ -17,6 +17,7 @@ Installs 1Password CLI with optional auto SSH key configuration
 |-----|-----|-----|-----|
 | vault | Default vault name to use. Sets OP_VAULT_NAME environment variable. | string | - |
 | account | 1Password account domain. Sets OP_ACCOUNT environment variable. | string | my.1password.com |
+| userEmail | User email for 1Password account (optional, used when adding account). | string | - |
 | disableInteractive | Disable interactive login prompt when no auth method is detected. | boolean | false |
 | autoSsh | Automatically fetch and configure SSH keys from 1Password. | boolean | false |
 | sshSecretNames | Comma-separated list of 1Password secret names containing SSH keys. | string | - |

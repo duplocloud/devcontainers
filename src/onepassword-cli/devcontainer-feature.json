@@ -1,7 +1,7 @@
 {
   "name": "1Password CLI",
   "id": "onepassword-cli",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Installs 1Password CLI with optional auto SSH key configuration",
   "documentationURL": "https://github.com/duplocloud/devcontainers/tree/main/src/onepassword-cli",
   "options": {
@@ -9,6 +9,11 @@
       "type": "string",
       "default": "",
       "description": "Default vault name to use. Sets OP_VAULT_NAME environment variable."
+    },
+    "vaultID": {
+      "type": "string",
+      "default": "",
+      "description": "Default vault ID to use. Sets OP_VAULT environment variable. Preferred over vault name when both are specified."
     },
     "account": {
       "type": "string",

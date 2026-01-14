@@ -4,8 +4,16 @@
 	"features": {
 		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
 			"moby": false
+		},
+		"./.devcontainer/features/onepassword-cli": {
+			"autoSsh": true,
+			"sshSecretNames": "Github Personal",
+			"vault": "Homelab"
 		}
 	},
+	"runArgs": [
+		"--env-file=${localWorkspaceFolder}/.env"
+	],
 	"customizations": {
 		"vscode": {
 			"extensions": [

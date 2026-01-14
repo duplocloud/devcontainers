@@ -23,10 +23,6 @@ function ensure_line() {
   fi
 }
 
-# Ensure .ssh directory exists with proper permissions
-mkdir -p "${USER_HOME}/.ssh"
-chmod 700 "${USER_HOME}/.ssh"
-
 # Configure git user.name
 # Priority: feature option > environment variable
 git_user="${USERNAME:-${GIT_USER:-}}"

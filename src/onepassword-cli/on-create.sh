@@ -23,7 +23,8 @@ OP_ACCOUNT_SHORTHAND=""
 
 # Extract subdomain from account URL for shorthand
 function get_account_shorthand() {
-  local account="${ACCOUNT:-my.1password.com}"
+  # Check if OP_ACCOUNT is set in environment first (takes precedence)
+  local account="${OP_ACCOUNT:-${ACCOUNT:-my.1password.com}}"
   # Extract subdomain (everything before the first dot)
   echo "${account%%.*}"
 }
@@ -171,8 +172,9 @@ function check_authentication() {
   fi
 
   # Get account shorthand
+  # Check if OP_ACCOUNT is already set in environment (takes precedence)
+  local account="${OP_ACCOUNT:-${ACCOUNT:-my.1password.com}}"
   OP_ACCOUNT_SHORTHAND=$(get_account_shorthand)
-  local account="${ACCOUNT:-my.1password.com}"
   
   # Check if account exists
   if account_exists "$account" "$OP_ACCOUNT_SHORTHAND"; then
@@ -200,17 +202,37 @@ function check_authentication() {
 
 # Configure vault environment variable
 function configure_vault() {
-  if [ -n "${VAULT:-}" ] && [ "$OP_AUTHENTICATED" = "true" ]; then
-    echo "Configuring vault: $VAULT"
-    vault_id=$(op vault get "$VAULT" --format json 2>/dev/null | jq -r '.id' 2>/dev/null || echo "")
-    
-    if [ -n "$vault_id" ]; then
-      export OP_VAULT="$vault_id"
-      export OP_VAULT_NAME="$VAULT"
-      echo "Vault ID: $vault_id"
+  # Check if OP_VAULT is already set in environment
+  if [ -n "${OP_VAULT:-}" ]; then
+    echo "Using existing OP_VAULT from environment: $OP_VAULT"
+    return 0
+  fi
+  
+  if [ "$OP_AUTHENTICATED" != "true" ]; then
+    return 0
+  fi
+  
+  # Only try to get vault with desktop or session auth methods
+  # Service accounts and connect can't use 'op vault get'
+  if [ -n "${VAULT:-}" ]; then
+    if [ "$OP_AUTH_METHOD" = "desktop" ] || [ "$OP_AUTH_METHOD" = "session" ]; then
+      echo "Configuring vault: $VAULT"
+      vault_id=$(op vault get "$VAULT" --format json 2>/dev/null | jq -r '.id' 2>/dev/null || echo "")
+      
+      if [ -n "$vault_id" ] && [ "$vault_id" != "null" ]; then
+        export OP_VAULT="$vault_id"
+        export OP_VAULT_NAME="$VAULT"
+        echo "Vault ID: $vault_id"
+      else
+        echo "Warning: Could not retrieve vault ID for '$VAULT'"
+      fi
     else
-      echo "Warning: Could not retrieve vault ID for '$VAULT'"
+      echo "Warning: 'op vault get' not supported with $OP_AUTH_METHOD authentication"
+      echo "Set OP_VAULT environment variable directly if needed"
     fi
+  else
+    echo "Warning: No vault configured (VAULT option not set)"
+    echo "SSH secrets will be accessed from the default vault"
   fi
 }
 

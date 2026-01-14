@@ -25,6 +25,12 @@ The feature supports multiple authentication methods (checked in order):
 
 If no authentication method succeeds, only the CLI is installed and a warning is displayed.
 
+**Important**: When using Connect Server or Service Account authentication, you **must** specify a vault using either:
+- The `vault` feature option in devcontainer.json
+- The `OP_VAULT` environment variable (takes precedence)
+
+These authentication methods require `--vault` parameter for all item operations and automatically set `OP_FORMAT=json`.
+
 ### Desktop App Agent Authentication
 
 The Desktop App authentication method works by detecting the 1Password agent socket at `~/.1password/agent.sock`. This method is **only available on Linux** because:

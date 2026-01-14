@@ -141,6 +141,8 @@ function check_authentication() {
     echo "1Password Connect environment detected"
     OP_AUTH_METHOD="connect"
     OP_AUTHENTICATED="true"
+    # Connect requires JSON format
+    export OP_FORMAT="json"
     return 0
   fi
 
@@ -149,6 +151,8 @@ function check_authentication() {
     echo "1Password Service Account Token detected"
     OP_AUTH_METHOD="service-account"
     OP_AUTHENTICATED="true"
+    # Service accounts require JSON format
+    export OP_FORMAT="json"
     return 0
   fi
 
@@ -236,6 +240,22 @@ function configure_vault() {
   fi
 }
 
+# Get vault parameter for op commands
+function get_vault_param() {
+  # Connect and service accounts require --vault parameter
+  if [ "$OP_AUTH_METHOD" = "connect" ] || [ "$OP_AUTH_METHOD" = "service-account" ]; then
+    if [ -n "${OP_VAULT:-}" ]; then
+      echo "--vault $OP_VAULT"
+    elif [ -n "${OP_VAULT_NAME:-}" ]; then
+      echo "--vault $OP_VAULT_NAME"
+    else
+      echo ""
+    fi
+  else
+    echo ""
+  fi
+}
+
 # Check if SSH agent is available and working
 function is_ssh_agent_available() {
   # No SSH_AUTH_SOCK means no agent
@@ -283,11 +303,15 @@ function configure_ssh_key() {
     fi
   fi
   
-  # Determine vault path prefix
+  # Determine vault path prefix for op read
   local vault_prefix=""
   if [ -n "${OP_VAULT_NAME:-}" ]; then
     vault_prefix="${OP_VAULT_NAME}/"
   fi
+  
+  # Get vault parameter for op item commands
+  local vault_param
+  vault_param=$(get_vault_param)
   
   # Download private key if needed
   if [ "$download_private" = "true" ]; then
@@ -316,7 +340,7 @@ function configure_ssh_key() {
   
   # Check for host configuration
   local host
-  host=$(op item get "$secret_name" --format json 2>/dev/null | jq -r '.fields[] | select(.label == "host") | .value' 2>/dev/null || echo "")
+  host=$(op item get "$secret_name" --format json $vault_param 2>/dev/null | jq -r '.fields[] | select(.label == "host") | .value' 2>/dev/null || echo "")
   
   if [ -n "$host" ] && [ "$host" != "null" ]; then
     local has_agent=false
@@ -352,9 +376,13 @@ function configure_ssh_host() {
   
   echo "Adding SSH config entry for: $host"
   
+  # Get vault parameter for op item commands
+  local vault_param
+  vault_param=$(get_vault_param)
+  
   # Get secret details
   local secret_json
-  secret_json=$(op item get "$secret_name" --format json 2>/dev/null || echo "{}")
+  secret_json=$(op item get "$secret_name" --format json $vault_param 2>/dev/null || echo "{}")
   
   # Get username from secret if available
   local username

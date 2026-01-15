@@ -1,0 +1,10 @@
+{
+  "with_version": {
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+      "duploctl": {
+        "version": "v0.3.8"
+      }
+    }
+  }
+}

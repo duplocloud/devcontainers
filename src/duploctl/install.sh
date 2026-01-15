@@ -41,7 +41,7 @@ install_binary() {
   
   echo "Downloading duploctl $VERSION"
   mkdir -p "$BIN_DIR"
-  curl -fsSL "$url" | tar -xz -C "$BIN_DIR" duploctl
+  curl -fsSL "$url" | tar -xz -C "$BIN_DIR" --strip-components=0
   chmod +x "$BIN_DIR/duploctl"
 }
 

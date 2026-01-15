@@ -1,0 +1,47 @@
+{
+  "id": "kubernetes",
+  "version": "1.0.0",
+  "name": "Kubernetes",
+  "description": "Configures Kubernetes with DuploCloud JIT authentication and VS Code extensions.",
+  "options": {
+    "jit": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable automatic JIT authentication with duploctl on container creation."
+    },
+    "jitAdmin": {
+      "type": "boolean",
+      "default": false,
+      "description": "Use admin privileges when authenticating (requires admin token). Adds --admin flag."
+    },
+    "jitInteractive": {
+      "type": "boolean",
+      "default": false,
+      "description": "Use interactive browser authentication. Adds --interactive flag. Cannot be used in non-interactive devcontainers."
+    },
+    "plan": {
+      "type": "string",
+      "default": "",
+      "description": "DuploCloud plan/infrastructure name for JIT. Alternative to DUPLO_PLAN env var. Requires admin to be true."
+    },
+    "tenant": {
+      "type": "string",
+      "default": "",
+      "description": "DuploCloud tenant name to scope into. Alternative to DUPLO_TENANT env var."
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-kubernetes-tools.vscode-kubernetes-tools"
+      ]
+    }
+  },
+  "installsAfter": [
+    "ghcr.io/duplocloud/devcontainers/duploctl"
+  ],
+  "dependsOn": {
+    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {}
+  },
+  "onCreateCommand": "bash /usr/local/share/kubernetes-on-create.sh"
+}

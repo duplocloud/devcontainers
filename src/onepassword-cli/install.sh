@@ -40,6 +40,7 @@ chmod 755 /usr/local/share/onepassword-on-create.sh
 mkdir -p /usr/local/etc
 cat <<EOF > /usr/local/etc/onepassword-feature.conf
 VAULT="${VAULT:-}"
+VAULTID="${VAULTID:-}"
 ACCOUNT="${ACCOUNT:-my.1password.com}"
 USEREMAIL="${USEREMAIL:-}"
 DISABLEINTERACTIVE="${DISABLEINTERACTIVE:-false}"
@@ -56,6 +57,10 @@ EOF
 
 if [ -n "${VAULT:-}" ]; then
   echo "OP_VAULT_NAME=\"${VAULT}\"" >> /etc/environment
+fi
+
+if [ -n "${VAULTID:-}" ]; then
+  echo "OP_VAULT=\"${VAULTID}\"" >> /etc/environment
 fi
 
 echo "1Password CLI installed successfully!"

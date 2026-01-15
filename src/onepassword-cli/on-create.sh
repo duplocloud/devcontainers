@@ -141,8 +141,14 @@ function check_authentication() {
     echo "1Password Connect environment detected"
     OP_AUTH_METHOD="connect"
     OP_AUTHENTICATED="true"
-    # Connect requires JSON format
+    # Connect requires JSON format - set globally
     export OP_FORMAT="json"
+    # Persist to bashrc
+    local bashrc="${USER_HOME}/.bashrc"
+    if ! grep -q "^export OP_FORMAT=" "$bashrc" 2>/dev/null; then
+      echo 'export OP_FORMAT="json"' >> "$bashrc"
+      echo "OP_FORMAT=json persisted to .bashrc"
+    fi
     return 0
   fi
 
@@ -151,8 +157,14 @@ function check_authentication() {
     echo "1Password Service Account Token detected"
     OP_AUTH_METHOD="service-account"
     OP_AUTHENTICATED="true"
-    # Service accounts require JSON format
+    # Service accounts require JSON format - set globally
     export OP_FORMAT="json"
+    # Persist to bashrc
+    local bashrc="${USER_HOME}/.bashrc"
+    if ! grep -q "^export OP_FORMAT=" "$bashrc" 2>/dev/null; then
+      echo 'export OP_FORMAT="json"' >> "$bashrc"
+      echo "OP_FORMAT=json persisted to .bashrc"
+    fi
     return 0
   fi
 
@@ -206,44 +218,77 @@ function check_authentication() {
 
 # Configure vault environment variable
 function configure_vault() {
-  # Check if OP_VAULT is already set in environment
-  if [ -n "${OP_VAULT:-}" ]; then
-    echo "Using existing OP_VAULT from environment: $OP_VAULT"
-    return 0
-  fi
+  local bashrc="${USER_HOME}/.bashrc"
   
-  if [ "$OP_AUTHENTICATED" != "true" ]; then
-    return 0
-  fi
-  
-  # Only try to get vault with desktop or session auth methods
-  # Service accounts and connect can't use 'op vault get'
-  if [ -n "${VAULT:-}" ]; then
-    if [ "$OP_AUTH_METHOD" = "desktop" ] || [ "$OP_AUTH_METHOD" = "session" ]; then
-      echo "Configuring vault: $VAULT"
-      vault_id=$(op vault get "$VAULT" --format json 2>/dev/null | jq -r '.id' 2>/dev/null || echo "")
-      
-      if [ -n "$vault_id" ] && [ "$vault_id" != "null" ]; then
-        export OP_VAULT="$vault_id"
-        export OP_VAULT_NAME="$VAULT"
-        echo "Vault ID: $vault_id"
-      else
-        echo "Warning: Could not retrieve vault ID for '$VAULT'"
+  # Handle OP_VAULT (vault ID) - env takes precedence over vaultID option
+  if [ -z "${OP_VAULT:-}" ]; then
+    # No env var, check for vaultID option from feature config
+    if [ -n "${VAULTID:-}" ]; then
+      export OP_VAULT="$VAULTID"
+      echo "Using vault ID from feature config: $OP_VAULT"
+      # Persist to bashrc
+      if ! grep -q "^export OP_VAULT=" "$bashrc" 2>/dev/null; then
+        echo "export OP_VAULT=\"${OP_VAULT}\"" >> "$bashrc"
       fi
-    else
-      echo "Warning: 'op vault get' not supported with $OP_AUTH_METHOD authentication"
-      echo "Set OP_VAULT environment variable directly if needed"
     fi
   else
-    echo "Warning: No vault configured (VAULT option not set)"
-    echo "SSH secrets will be accessed from the default vault"
+    echo "Using existing OP_VAULT from environment: $OP_VAULT"
   fi
+  
+  # Handle OP_VAULT_NAME (vault name) - env takes precedence over vault option
+  if [ -z "${OP_VAULT_NAME:-}" ]; then
+    # No env var, check for vault option from feature config
+    if [ -n "${VAULT:-}" ]; then
+      export OP_VAULT_NAME="$VAULT"
+      echo "Using vault name from feature config: $OP_VAULT_NAME"
+      # Persist to bashrc
+      if ! grep -q "^export OP_VAULT_NAME=" "$bashrc" 2>/dev/null; then
+        echo "export OP_VAULT_NAME=\"${OP_VAULT_NAME}\"" >> "$bashrc"
+      fi
+    fi
+  else
+    echo "Using existing OP_VAULT_NAME from environment: $OP_VAULT_NAME"
+  fi
+  
+  # Try to get vault ID from name if we have name but no ID (desktop/session only)
+  if [ -z "${OP_VAULT:-}" ] && [ -n "${OP_VAULT_NAME:-}" ]; then
+    if [ "$OP_AUTHENTICATED" = "true" ]; then
+      if [ "$OP_AUTH_METHOD" = "desktop" ] || [ "$OP_AUTH_METHOD" = "session" ]; then
+        echo "Attempting to resolve vault ID for: $OP_VAULT_NAME"
+        local vault_id
+        vault_id=$(op vault get "$OP_VAULT_NAME" --format json 2>/dev/null | jq -r '.id' 2>/dev/null || echo "")
+        
+        if [ -n "$vault_id" ] && [ "$vault_id" != "null" ]; then
+          export OP_VAULT="$vault_id"
+          echo "Resolved vault ID: $OP_VAULT"
+          # Persist to bashrc
+          if ! grep -q "^export OP_VAULT=" "$bashrc" 2>/dev/null; then
+            echo "export OP_VAULT=\"${OP_VAULT}\"" >> "$bashrc"
+          fi
+        else
+          echo "Warning: Could not resolve vault ID for '$OP_VAULT_NAME'"
+        fi
+      fi
+    fi
+  fi
+  
+  # Validate that at least one vault identifier is set
+  if [ -z "${OP_VAULT:-}" ] && [ -z "${OP_VAULT_NAME:-}" ]; then
+    echo "Warning: No vault configured!"
+    echo "Set OP_VAULT (vault ID) or OP_VAULT_NAME (vault name) environment variable,"
+    echo "or configure 'vaultID' or 'vault' option in devcontainer feature."
+    echo "SSH secrets will be accessed from the default vault (may fail)."
+    return 1
+  fi
+  
+  return 0
 }
 
 # Get vault parameter for op commands
 function get_vault_param() {
   # Connect and service accounts require --vault parameter
   if [ "$OP_AUTH_METHOD" = "connect" ] || [ "$OP_AUTH_METHOD" = "service-account" ]; then
+    # Prefer vault ID over name
     if [ -n "${OP_VAULT:-}" ]; then
       echo "--vault $OP_VAULT"
     elif [ -n "${OP_VAULT_NAME:-}" ]; then
@@ -303,10 +348,12 @@ function configure_ssh_key() {
     fi
   fi
   
-  # Determine vault path prefix for op read
-  local vault_prefix=""
-  if [ -n "${OP_VAULT_NAME:-}" ]; then
-    vault_prefix="${OP_VAULT_NAME}/"
+  # Determine vault for op read (prefer ID over name)
+  local vault_for_read=""
+  if [ -n "${OP_VAULT:-}" ]; then
+    vault_for_read="$OP_VAULT"
+  elif [ -n "${OP_VAULT_NAME:-}" ]; then
+    vault_for_read="$OP_VAULT_NAME"
   fi
   
   # Get vault parameter for op item commands
@@ -316,7 +363,9 @@ function configure_ssh_key() {
   # Download private key if needed
   if [ "$download_private" = "true" ]; then
     echo "Fetching private key: $secret_name"
-    if ! op read "op://${vault_prefix}${secret_name}/private key?ssh-format=openssh" > "$private_key_path" 2>/dev/null; then
+    local private_key_ref="op://${vault_for_read}/${secret_name}/private key?ssh-format=openssh"
+    echo "Debug: op read reference: $private_key_ref"
+    if ! op read "$private_key_ref" > "$private_key_path" 2>/dev/null; then
       echo "Warning: Failed to fetch private key for '$secret_name'"
       rm -f "$private_key_path"
       return 1
@@ -328,7 +377,9 @@ function configure_ssh_key() {
   # Download public key if needed
   if [ "$download_public" = "true" ]; then
     echo "Fetching public key: $secret_name"
-    if ! op read "op://${vault_prefix}${secret_name}/public key" > "$public_key_path" 2>/dev/null; then
+    local public_key_ref="op://${vault_for_read}/${secret_name}/public key"
+    echo "Debug: op read reference: $public_key_ref"
+    if ! op read "$public_key_ref" > "$public_key_path" 2>/dev/null; then
       echo "Warning: Failed to fetch public key for '$secret_name'"
       rm -f "$public_key_path"
       return 1

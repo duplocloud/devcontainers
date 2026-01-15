@@ -1,0 +1,28 @@
+{
+  "jit_disabled": {
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+      "kubernetes": {
+        "jit": false
+      }
+    }
+  },
+  "with_admin": {
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+      "kubernetes": {
+        "jit": true,
+        "jitAdmin": true
+      }
+    }
+  },
+  "with_tenant": {
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+      "kubernetes": {
+        "jit": true,
+        "tenant": "test-tenant"
+      }
+    }
+  }
+}

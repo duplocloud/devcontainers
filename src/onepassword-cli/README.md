@@ -16,6 +16,7 @@ Installs 1Password CLI with optional auto SSH key configuration
 | Options Id | Description | Type | Default Value |
 |-----|-----|-----|-----|
 | vault | Default vault name to use. Sets OP_VAULT_NAME environment variable. | string | - |
+| vaultID | Default vault ID to use. Sets OP_VAULT environment variable. Preferred over vault name when both are specified. | string | - |
 | account | 1Password account domain. Sets OP_ACCOUNT environment variable. | string | my.1password.com |
 | userEmail | User email for 1Password account (optional, used when adding account). | string | - |
 | disableInteractive | Disable interactive login prompt when no auth method is detected. | boolean | false |
@@ -39,6 +40,20 @@ Add this feature to your devcontainer configuration:
 }
 ```
 
+For service accounts or Connect Server, you can specify the vault ID directly:
+
+```json
+{
+  "features": {
+    "ghcr.io/duplocloud/devcontainers/onepassword-cli:1": {
+      "vaultID": "4icvhuuvzrssdm276agt5eldae",
+      "autoSsh": true,
+      "sshSecretNames": "GitHub SSH Key"
+    }
+  }
+}
+```
+
 ## Authentication Methods
 
 The feature supports multiple authentication methods (checked in order):
@@ -49,6 +64,14 @@ The feature supports multiple authentication methods (checked in order):
 4. **Interactive Login**: Prompts for email/password (can be disabled with `disableInteractive: true`)
 
 If no authentication method succeeds, only the CLI is installed and a warning is displayed.
+
+**Important**: When using Connect Server or Service Account authentication, you **must** specify a vault using either:
+- The `vault` feature option (vault name) in devcontainer.json
+- The `vaultID` feature option (vault ID) in devcontainer.json  
+- The `OP_VAULT` environment variable (vault ID - takes precedence)
+- The `OP_VAULT_NAME` environment variable (vault name - takes precedence)
+
+These authentication methods require a vault to be specified for all item operations and automatically set `OP_FORMAT=json` for all terminal sessions.
 
 ### Desktop App Agent Authentication
 
@@ -71,11 +94,22 @@ To enable Desktop App authentication on Linux:
 
 This authentication method allows biometric authentication within the devcontainer on Linux hosts.
 
-### Session Persistence
+### Session Persistence (available in all terminal sessions):
 
-When using interactive login, the session token is persisted to `~/.bashrc` as `OP_SESSION_<UUID>` where `<UUID>` is the user's account UUID. This ensures the session remains valid across terminal sessions without requiring re-authentication.
+- `OP_ACCOUNT` - The 1Password account domain (from `account` option or env var)
+- `OP_VAULT_NAME` - The vault name (from `vault` option or env var)
+- `OP_VAULT` - The vault ID (from `vaultID` option, env var, or resolved from vault name)
+- `OP_FORMAT` - Set to `"json"` automatically for Connect/Service Account auth methods
 
-The session token is automatically:
+**Precedence**: Environment variables already set take precedence over devcontainer feature options.
+
+**Vault Configuration**: You can specify either:
+- `vault`: The vault name (human-readable)
+- `vaultID`: The vault ID (UUID format)
+- Both ID and name are interchangeable in 1Password CLI commands
+- When both are provided, the ID is preferred for better performance
+
+**Important**: When using Connect Server or Service Account authentication, you **must** specify a vault using either the `vault` or `vaultID` option, or set the corresponding environment variable.
 - Extracted during the sign-in process using `op signin --raw`
 - Mapped to the correct account UUID from `op account list`
 - Exported to the current script environment for immediate use

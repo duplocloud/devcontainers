@@ -41,7 +41,7 @@ function generate_kubeconfig() {
   mkdir -p "${USER_HOME}/.kube"
   
   # Build duploctl command arguments
-  local cmd_args=("update_kubeconfig")
+  local cmd_args=("jit" "update_kubeconfig")
   
   # Add admin flag if enabled
   if [ "${JIT_ADMIN}" = "true" ]; then

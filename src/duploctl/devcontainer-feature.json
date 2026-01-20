@@ -1,6 +1,6 @@
 {
   "id": "duploctl",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": "duploctl",
   "description": "Installs duploctl CLI via pip (if available) or prebuilt binary.",
   "options": {
@@ -10,5 +10,7 @@
       "description": "Version to install (e.g. v0.3.8). Use 'latest' for pip installs only."
     }
   },
-  "installsAfter": []
+  "installsAfter": [
+    "ghcr.io/devcontainers/features/python"
+  ]
 }

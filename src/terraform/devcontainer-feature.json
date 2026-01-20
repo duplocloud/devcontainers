@@ -1,7 +1,7 @@
 {
     "name": "Terraform with DuploCloud Helpers",
     "id": "terraform",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Installs Terraform with DuploCloud-specific helper functions for multi-cloud state management",
     "documentationURL": "https://github.com/duplocloud-internal/customer-workspace/tree/main/features/terraform",
     "options": {},

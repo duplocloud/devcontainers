@@ -4,7 +4,7 @@ function tf-cmd() {
   local tf_args cmd var_cmds wksp_dir module_dir wksp module var_file
   var_cmds="apply destroy plan show validate state"
   tf_args="$*"
-  cmd=$(tf-cmd "$tf_args")
+  cmd=$(tf-extract-cmd "$tf_args")
   # re-export duplo creds as lowercase
   # export duplo_token=$(duploctl jit token --interactive --admin)
   export duplo_token=$DUPLO_TOKEN
@@ -58,7 +58,7 @@ function tf-workspace-dir() {
 }
 
 # find the terraform command
-function tf-cmd() {
+function tf-extract-cmd() {
   for i in $1; do
     if [[ "$i" != -* ]]; then
       echo "${i#-}"
@@ -135,4 +135,4 @@ function tf-init() {
   terraform "$@" "${TF_ARGS[@]}"
 }
 
-tf-cmd $@
+tf-cmd "$@"

@@ -23,37 +23,4 @@ chmod 644 /usr/local/share/duplocloud/tf.sh
 cp "${FEATURE_DIR}/scripts/tf.sh" /usr/local/bin/tf
 chmod 755 /usr/local/bin/tf
 
-# Source tf.sh in bashrc for interactive shells
-if [ -f "$USER_HOME/.bashrc" ] && ! grep -q "source /usr/local/share/duplocloud/tf.sh" "$USER_HOME/.bashrc"; then
-    cat >> "$USER_HOME/.bashrc" <<'EOF'
-
-# Source DuploCloud Terraform helpers
-source /usr/local/share/duplocloud/tf.sh
-EOF
-fi
-
-# Also add to /etc/bash.bashrc for system-wide availability
-if ! grep -q "source /usr/local/share/duplocloud/tf.sh" /etc/bash.bashrc; then
-    cat >> /etc/bash.bashrc <<'EOF'
-
-# Source DuploCloud Terraform helpers
-source /usr/local/share/duplocloud/tf.sh
-EOF
-fi
-
-# Add to zshrc if zsh is available
-if [ -d "/etc/zsh" ]; then
-    if [ ! -f "$USER_HOME/.zshrc" ]; then
-        touch "$USER_HOME/.zshrc"
-        chown "$USER_NAME:$USER_NAME" "$USER_HOME/.zshrc" 2>/dev/null || true
-    fi
-    if ! grep -q "source /usr/local/share/duplocloud/tf.sh" "$USER_HOME/.zshrc"; then
-        cat >> "$USER_HOME/.zshrc" <<'EOF'
-
-# Source DuploCloud Terraform helpers
-source /usr/local/share/duplocloud/tf.sh
-EOF
-    fi
-fi
-
 echo "Terraform DuploCloud helpers installed successfully!"

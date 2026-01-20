@@ -1,11 +1,12 @@
 {
     "name": "Google Cloud CLI",
     "id": "gcloud-cli",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Installs Google Cloud CLI with multi-architecture support",
     "documentationURL": "https://github.com/duplocloud-internal/customer-workspace/tree/main/features/gcloud-cli",
     "options": {},
     "installsAfter": [
         "ghcr.io/devcontainers/features/python"
-    ]
+    ],
+    "onCreateCommand": "bash /usr/local/share/gcloud-on-create.sh"
 }

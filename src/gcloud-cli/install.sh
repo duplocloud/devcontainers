@@ -3,6 +3,8 @@ set -e
 
 echo "Installing Google Cloud CLI..."
 
+FEATURE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Install required dependencies (curl/fzf may not exist on vanilla images)
 apt-get update
 apt-get install -y --no-install-recommends curl ca-certificates fzf
@@ -32,5 +34,9 @@ rm "google-cloud-cli-linux-${GCLOUD_ARCH}.tar.gz"
 
 # Set proper permissions
 chown -R "$USER_NAME:$USER_NAME" "$USER_HOME/google-cloud-sdk" 2>/dev/null || true
+
+# Copy on-create script to shared location
+cp "${FEATURE_DIR}/on-create.sh" /usr/local/share/gcloud-on-create.sh
+chmod +x /usr/local/share/gcloud-on-create.sh
 
 echo "Google Cloud CLI installed successfully!"

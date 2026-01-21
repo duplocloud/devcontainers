@@ -1,0 +1,23 @@
+{
+  "id": "ai-gemini",
+  "version": "1.0.0",
+  "name": "Gemini CLI AI",
+  "description": "Google's Gemini CLI with VS Code integration and skills support",
+  "options": {
+    "skills": {
+      "type": "string",
+      "default": "",
+      "description": "Comma-separated list of skills to install (e.g., 'tf-module,api-design')"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Google.geminicodeassist"
+      ]
+    }
+  },
+  "dependsOn": {
+    "ghcr.io/duplocloud/devcontainers/ai:latest": {}
+  }
+}

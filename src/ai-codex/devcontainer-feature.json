@@ -1,0 +1,23 @@
+{
+  "id": "ai-codex",
+  "version": "1.0.0",
+  "name": "OpenAI Codex AI",
+  "description": "OpenAI's Codex CLI with VS Code integration and skills support",
+  "options": {
+    "skills": {
+      "type": "string",
+      "default": "",
+      "description": "Comma-separated list of skills to install (e.g., 'tf-module,api-design')"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "openai.chatgpt"
+      ]
+    }
+  },
+  "dependsOn": {
+    "ghcr.io/duplocloud/devcontainers/ai:latest": {}
+  }
+}

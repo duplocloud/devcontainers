@@ -1,0 +1,10 @@
+{
+  "with_skills": {
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+      "ai-codex": {
+        "skills": "tf-module"
+      }
+    }
+  }
+}

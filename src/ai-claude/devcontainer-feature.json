@@ -1,0 +1,23 @@
+{
+  "id": "ai-claude",
+  "version": "1.0.0",
+  "name": "Claude Code AI",
+  "description": "Anthropic's Claude Code CLI with VS Code integration and skills support",
+  "options": {
+    "skills": {
+      "type": "string",
+      "default": "",
+      "description": "Comma-separated list of skills to install (e.g., 'tf-module,api-design')"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code"
+      ]
+    }
+  },
+  "dependsOn": {
+    "ghcr.io/duplocloud/devcontainers/ai:latest": {}
+  }
+}

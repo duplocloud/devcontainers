@@ -463,22 +463,19 @@ EOF
   # Add IdentityFile - public key if agent available, private key otherwise
   if [ "$has_agent" = "true" ]; then
     # Agent available: use public key so agent can lookup private key
-    echo "    IdentityFile ~/.ssh/${key_name}.pub" >> "$ssh_config"
+    # echo "    IdentityFile ~/.ssh/${key_name}.pub" >> "$ssh_config"
+    if [ "${SSH_AUTH_SOCK:-}" = "$HOME/.1password/agent.sock" ]; then
+      echo "1Password agent detected for SSH host configuration, we must be on Linux"
+      echo "    IdentityFile ~/.ssh/${key_name}.pub" >> "$ssh_config"
+      echo "    IdentityAgent \"${SSH_AUTH_SOCK}\"" >> "$ssh_config"
+    else 
+      echo "SSH agent is available, no need to point to it"
+      #   echo "    IdentityAgent \"${SSH_AUTH_SOCK}\"" >> "$ssh_config"
+    fi
   else
     # No agent: use private key directly
     echo "    IdentityFile ~/.ssh/${key_name}" >> "$ssh_config"
-  fi
-  echo "    IdentitiesOnly yes" >> "$ssh_config"
-  
-  # Add IdentityAgent if SSH agent is available
-  if [ "$has_agent" = "true" ]; then
-    # Check if SSH_AUTH_SOCK is the 1Password socket (Linux case)
-    if [ "${SSH_AUTH_SOCK:-}" = "$HOME/.1password/agent.sock" ]; then
-      echo "1Password agent detected for SSH host configuration, we must be on Linux"
-      echo "    IdentityAgent \"${SSH_AUTH_SOCK}\"" >> "$ssh_config"
-    elif [ -n "${SSH_AUTH_SOCK:-}" ]; then
-      echo "    IdentityAgent \"${SSH_AUTH_SOCK}\"" >> "$ssh_config"
-    fi
+    echo "    IdentitiesOnly yes" >> "$ssh_config"
   fi
 }
 

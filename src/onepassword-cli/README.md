@@ -15,6 +15,7 @@ Installs 1Password CLI with optional auto SSH key configuration
 
 | Options Id | Description | Type | Default Value |
 |-----|-----|-----|-----|
+| enabled | Enable the 1Password CLI feature. Set to false to skip installation completely. | boolean | true |
 | vault | Default vault name to use. Sets OP_VAULT_NAME environment variable. | string | - |
 | vaultID | Default vault ID to use. Sets OP_VAULT environment variable. Preferred over vault name when both are specified. | string | - |
 | account | 1Password account domain. Sets OP_ACCOUNT environment variable. | string | my.1password.com |
@@ -54,6 +55,26 @@ For service accounts or Connect Server, you can specify the vault ID directly:
 }
 ```
 
+### Disabling the Feature
+
+To completely disable the 1Password CLI feature (skip installation entirely), set the `enabled` option to `false`:
+
+```json
+{
+  "features": {
+    "ghcr.io/duplocloud/devcontainers/onepassword-cli:1": {
+      "enabled": false
+    }
+  }
+}
+```
+
+This is useful when you want to temporarily disable 1Password integration without removing the feature configuration from your devcontainer.json. When disabled:
+- No packages are installed
+- No authentication is attempted
+- No SSH configuration is performed
+- The on-create script exits immediately
+
 ## Authentication Methods
 
 The feature supports multiple authentication methods (checked in order):
@@ -62,16 +83,17 @@ The feature supports multiple authentication methods (checked in order):
 2. **Service Account**: Set `OP_SERVICE_ACCOUNT_TOKEN` environment variable
 3. **Desktop App Agent** (Linux only): Automatically detected if `~/.1password/agent.sock` exists
 4. **Interactive Login**: Prompts for email/password (can be disabled with `disableInteractive: true`)
+   - Supports automated password via `OP_PASSWD` environment variable (see [Interactive Login Requirements](#interactive-login-requirements))
 
 If no authentication method succeeds, only the CLI is installed and a warning is displayed.
 
 **Important**: When using Connect Server or Service Account authentication, you **must** specify a vault using either:
 - The `vault` feature option (vault name) in devcontainer.json
 - The `vaultID` feature option (vault ID) in devcontainer.json  
-- The `OP_VAULT` environment variable (vault ID - takes precedence)
-- The `OP_VAULT_NAME` environment variable (vault name - takes precedence)
+- The `OP_VAULT` environment variable (vault ID - takes precedence over a name)
+- The `OP_VAULT_NAME` environment variable (vault name)
 
-These authentication methods require a vault to be specified for all item operations and automatically set `OP_FORMAT=json` for all terminal sessions.
+Some authentication methods require a vault to be specified for all item operations and automatically set `OP_FORMAT=json` for all terminal sessions. Mainly service accounts and Connect Server.
 
 ### Desktop App Agent Authentication
 
@@ -146,7 +168,7 @@ Specify exact secret names:
 
 ### Using Secret Tags
 
-Search for secrets by tag:
+Search for secrets by tag (defaults to `ssh` tag):
 
 ```json
 {
@@ -159,28 +181,50 @@ Search for secrets by tag:
 }
 ```
 
+**Note:** If both `sshSecretNames` and `sshSecretTags` are specified, `sshSecretNames` takes precedence.
+
 ### SSH Secret Requirements
 
-Each 1Password SSH secret must have these fields:
+**Built-in Fields from 1Password SSH Secret Type:**
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `private key` | Yes | The SSH private key |
-| `public key` | Yes | The SSH public key |
-| `host` | No | Hostname for automatic SSH config entry |
-| `username` | No | SSH username for the host (defaults to no User if omitted) |
-| `port` | No | SSH port for the host (defaults to 22 if omitted) |
-| `key type` | No | Type of SSH key (ed25519, rsa, etc.) |
+When you import an SSH private key into 1Password, the SSH secret type automatically includes these fields:
+
+| Field | Automatically Added | Description |
+|-------|---------------------|-------------|
+| `private key` | ✅ Yes | The SSH private key |
+| `public key` | ✅ Yes | The SSH public key (derived from private key) |
+| `fingerprint` | ✅ Yes | The SSH key fingerprint |
+| `key type` | ✅ Yes | Type of SSH key (ed25519, rsa, etc.) |
+| `key generated on` | ✅ If applicable | Date the key was generated (if created via extension) |
+
+**Required Custom Fields for Auto SSH Config:**
+
+For the feature to automatically create SSH config entries, you must manually add these custom fields to your SSH secret in 1Password:
+
+| Field | Required for Auto Config | Description | Example Value |
+|-------|--------------------------|-------------|---------------|
+| `host` | ✅ Yes | The hostname for SSH connection | `github.com` |
+| `username` | Recommended | SSH username (typically `git` for Git hosting) | `git` |
+| `port` | Optional | SSH port (defaults to 22 if omitted) | `22` |
+
+**Important Note:** Without the `host` field, the feature will only download the SSH keys but will not create SSH config entries. The `username` field is almost always `git` for Git hosting services like GitHub, GitLab, and Bitbucket.
 
 ### How SSH Authentication Works
 
-The feature intelligently configures SSH based on whether an SSH agent is available:
+The feature intelligently configures SSH based on whether an SSH agent is available. 
+
+**SSH Agent in Devcontainers:**
+
+VS Code devcontainers automatically forward the host's SSH agent into the container by binding the `SSH_AUTH_SOCK` socket. This means if you have an SSH agent running on your host (such as the 1Password SSH agent), it will be available inside the devcontainer without additional configuration.
+
+For specific platform setup instructions, see [1Password SSH Agent Compatibility](https://developer.1password.com/docs/ssh/agent/compatibility/#ssh-auth-sock) which covers configuration for macOS, Linux, and Windows with devcontainers.
 
 **With SSH Agent Available:**
 - Downloads only the **public key** (`.pub`)
 - `IdentityFile` points to the public key
-- `IdentityAgent` is configured to use the agent
+- `IdentityAgent` is configured to use the agent (when 1Password agent is detected)
 - Private key is accessed securely through the agent
+- Biometric authentication can be used (on supported platforms)
 
 **Without SSH Agent:**
 - Downloads both **private and public keys**
@@ -195,6 +239,103 @@ SSH key files are named based on the secret name with spaces replaced by undersc
 - Secret: `GitHub SSH Key`
 - Private key: `~/.ssh/GitHub_SSH_Key`
 - Public key: `~/.ssh/GitHub_SSH_Key.pub`
+
+## Interactive Login Requirements
+
+When using interactive login (method 4 in the authentication methods), the feature will prompt you to add your 1Password account if it's not already configured. The interactive login process requires:
+
+### Account Setup Prompts
+
+When adding a new 1Password account, you will be prompted for:
+
+1. **Email address** - Your 1Password account email
+   - Can be pre-configured with the `userEmail` option to skip this prompt
+   - required on first login
+2. **Secret Key** - Your 1Password Secret Key (34-character key)
+   - This is always required interactively on first login
+3. **Master Password** - Your 1Password master password
+   - Required twice on first login(once to add account, once to sign in (unless `OP_PASSWD` is set, see below))
+
+**Example with pre-configured email:**
+```json
+{
+  "features": {
+    "ghcr.io/duplocloud/devcontainers/onepassword-cli:1": {
+      "userEmail": "user@example.com",
+      "account": "my.1password.com"
+    }
+  }
+}
+```
+
+### Automated Password Authentication with OP_PASSWD
+
+To avoid manual password entry during interactive login, set the `OP_PASSWD` environment variable:
+
+```json
+{
+  "containerEnv": {
+    "OP_PASSWD": "${localEnv:OP_PASSWD}"
+  },
+  "features": {
+    "ghcr.io/duplocloud/devcontainers/onepassword-cli:1": {
+      "userEmail": "user@example.com",
+      "account": "my.1password.com"
+    }
+  }
+}
+```
+
+**When OP_PASSWD is set:**
+- Password is passed via stdin to `op signin` command
+- Eliminates interactive password prompts
+- Useful for automated devcontainer startup without manual interaction
+- **Especially powerful when combined with persisted op data** (via `XDG_CONFIG_HOME` on a mounted volume) - enables fully automatic login on every container restart
+
+**When OP_PASSWD is not set:**
+- Falls back to interactive password prompt
+- User must manually enter password twice (add account + sign in)
+
+**Security Warning:** Be cautious when using `OP_PASSWD` as it exposes your password in environment variables. Consider using more secure authentication methods like Service Account tokens or Connect Server.
+
+## Session Persistence Across Container Restarts
+
+### Preventing Repeated Account Setup with XDG_CONFIG_HOME
+
+By default, 1Password CLI stores account data in the home directory. When the devcontainer is rebuilt or restarted, this data is lost and you must re-add your account.
+
+To persist 1Password data across container restarts, configure `XDG_CONFIG_HOME` to point to a directory within your workspace:
+
+```json
+{
+  "containerEnv": {
+    "XDG_CONFIG_HOME": "${containerWorkspaceFolder}/.config"
+  },
+  "features": {
+    "ghcr.io/duplocloud/devcontainers/onepassword-cli:1": {
+      "userEmail": "user@example.com",
+      "account": "my.1password.com"
+    }
+  }
+}
+```
+
+**How it works:**
+- 1Password CLI respects the `XDG_CONFIG_HOME` environment variable
+- Account data is stored in `$XDG_CONFIG_HOME/op/` instead of `~/.config/op/`
+- When pointing to a workspace directory, account data persists in your workspace
+- Subsequent container restarts will find the existing account configuration
+
+**Benefits:**
+- No need to re-add your account every time the container restarts
+- Account configuration is preserved across container rebuilds
+- Sign-in is faster (only need to authenticate, not re-add account)
+
+**Important:** Make sure to add `.config/` to your `.gitignore` to avoid committing 1Password account data to version control:
+
+```bash
+echo ".config/" >> .gitignore
+```
 
 ## Integration with Git Feature
 
@@ -222,43 +363,7 @@ The feature automatically configures SSH to use the 1Password SSH agent when ava
 
 ### SSH Agent Setup (macOS)
 
-To enable the 1Password SSH agent on macOS, you need to configure a Launch Agent to expose the socket. Create this plist file on your **host machine**:
-
-**File**: `~/Library/LaunchAgents/com.1password.SSH_AUTH_SOCK.plist`
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key>
-  <string>com.1password.SSH_AUTH_SOCK</string>
-  <key>ProgramArguments</key>
-  <array>
-    <string>/bin/sh</string>
-    <string>-c</string>
-    <string>/bin/ln -sf ~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock $SSH_AUTH_SOCK</string>
-  </array>
-  <key>RunAtLoad</key>
-  <true/>
-</dict>
-</plist>
-```
-
-Then mount the socket into your devcontainer:
-
-```json
-{
-  "containerEnv": {
-    "SSH_AUTH_SOCK": "/tmp/.1password-ssh-auth.sock"
-  },
-  "mounts": [
-    "source=${localEnv:HOME}/.1password/agent.sock,target=/tmp/.1password-ssh-auth.sock,type=bind"
-  ]
-}
-```
-
-The feature will verify the SSH agent is working by running `ssh-add -l` before configuring `IdentityAgent` in the SSH config.
+On macOS, you need to configure a Launch Agent to properly expose the 1Password SSH agent socket to your devcontainer. Follow the macOS-specific instructions at [1Password SSH Agent Compatibility](https://developer.1password.com/docs/ssh/agent/compatibility/#ssh-auth-sock).
 
 ### Verifying SSH Agent
 
@@ -270,15 +375,11 @@ ssh-add -l
 
 This should list the keys available in your 1Password SSH agent.
 
-For more information, see: [1Password SSH Agent Compatibility](https://developer.1password.com/docs/ssh/agent/compatibility/#ssh-auth-sock)
-Here are some docs on how to get the 1Password SSH Agent to work in a container on mac: https://developer.1password.com/docs/ssh/agent/compatibility/#ssh-auth-sock
-
-
-
 ## References 
 
 - [1Password CLI Documentation](https://developer.1password.com/docs/cli) - Official CLI reference and setup guides
 - [1Password Connect Server](https://developer.1password.com/docs/connect) - Deploy Connect server for automated secret access
+- [1Password SSH Agent Compatibility](https://developer.1password.com/docs/ssh/agent/compatibility/#ssh-auth-sock) - SSH agent setup for macOS, Linux, and Windows with devcontainers
 - [SSH Key Management in 1Password](https://support.1password.com/ssh-agent/) - Setting up SSH keys in 1Password
 
 

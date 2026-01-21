@@ -15,6 +15,7 @@ Installs OpenVPN client for connecting to VPN networks
 
 | Options Id | Description | Type | Default Value |
 |-----|-----|-----|-----|
+| enabled | Enable the OpenVPN feature. Set to false to skip installation completely. | boolean | true |
 | autoConnect | Automatically initialize and connect to VPN on container start. Set to false to only install the OpenVPN client. | boolean | true |
 
 # OpenVPN CLI Feature

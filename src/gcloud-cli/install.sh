@@ -7,7 +7,28 @@ FEATURE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Install required dependencies (curl/fzf may not exist on vanilla images)
 apt-get update
-apt-get install -y --no-install-recommends curl ca-certificates fzf
+apt_packages=(curl ca-certificates fzf)
+
+# gcloud's installer requires `python` on PATH
+if ! command -v python >/dev/null 2>&1; then
+  if command -v python3 >/dev/null 2>&1; then
+    echo "python3 is available but python is missing; creating python -> python3 shim."
+    mkdir -p /usr/local/bin
+    ln -sf "$(command -v python3)" /usr/local/bin/python
+  else
+    echo "python is not available; installing python3."
+    apt_packages+=(python3)
+  fi
+fi
+
+apt-get install -y --no-install-recommends "${apt_packages[@]}"
+apt-get clean
+rm -rf /var/lib/apt/lists/*
+
+if ! command -v python >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
+  mkdir -p /usr/local/bin
+  ln -sf "$(command -v python3)" /usr/local/bin/python
+fi
 
 # Use devcontainer environment variables with fallbacks
 USER_HOME="${_REMOTE_USER_HOME:-/root}"

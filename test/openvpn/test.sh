@@ -12,9 +12,15 @@ source dev-container-features-test-lib
 
 # Feature-specific tests
 check "openvpn is installed" command -v openvpn
-check "openvpn version" openvpn --version
-check "init script exists" test -f /usr/local/share/openvpn-init.sh
-check "post-start script exists" test -f /usr/local/share/openvpn-post-start.sh
+check "openvpn version output" bash -lc "openvpn --version 2>&1 | head -n 1 | grep -q '^OpenVPN '"
+check "on-create script exists" test -x /usr/local/share/openvpn-on-create.sh
+check "post-start script exists" test -x /usr/local/share/openvpn-post-start.sh
+check "config file exists" test -f /usr/local/etc/openvpn-feature.conf
+check "enabled persisted true" grep -q '^OVPN_ENABLED="true"$' /usr/local/etc/openvpn-feature.conf
+
+check "on-create runs safely" bash -lc "_CONTAINER_WORKSPACE_FOLDER=/tmp/openvpn-test bash /usr/local/share/openvpn-on-create.sh"
+check "on-create created .ovpn directory" test -d /tmp/openvpn-test/.ovpn
+check "post-start runs safely" bash -lc "_CONTAINER_WORKSPACE_FOLDER=/tmp/openvpn-test bash /usr/local/share/openvpn-post-start.sh"
 
 # Report results
 reportResults

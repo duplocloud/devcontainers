@@ -6,5 +6,13 @@
         "autoConnect": false
       }
     }
+  },
+  "disabled": {
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+      "openvpn": {
+        "enabled": false
+      }
+    }
   }
 }

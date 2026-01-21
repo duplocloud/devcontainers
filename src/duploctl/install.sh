@@ -3,6 +3,7 @@ set -e
 
 VERSION="${VERSION:-latest}"
 BIN_DIR="/usr/local/bin"
+BINARY_FALLBACK_VERSION="${BINARY_FALLBACK_VERSION:-v0.3.8}"
 
 # Check if pip is available
 has_pip() { command -v python3 >/dev/null && python3 -m pip --version >/dev/null 2>&1; }
@@ -34,7 +35,15 @@ install_with_pip() {
 }
 
 install_binary() {
-  [[ "$VERSION" == "latest" ]] && { echo "Error: Binary install requires a specific version (e.g. v0.3.8)" >&2; exit 1; }
+  apt-get update
+  apt-get install -y --no-install-recommends ca-certificates curl tar gzip
+  apt-get clean
+  rm -rf /var/lib/apt/lists/*
+
+  if [[ "$VERSION" == "latest" ]]; then
+    echo "Version 'latest' requested, but pip is unavailable. Falling back to ${BINARY_FALLBACK_VERSION} for binary install."
+    VERSION="${BINARY_FALLBACK_VERSION}"
+  fi
   
   local ver="${VERSION#v}"
   local url="https://github.com/duplocloud/duploctl/releases/download/v${ver}/duploctl-${ver}-$(get_os)-$(get_arch).tar.gz"

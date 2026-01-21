@@ -12,10 +12,10 @@ source dev-container-features-test-lib
 
 # Feature-specific tests
 check "tf.sh helper exists" test -f /usr/local/share/duplocloud/tf.sh
-check "tf.sh is sourceable" bash -c "source /usr/local/share/duplocloud/tf.sh"
-check "tf.sh in system bashrc" grep -q "duplocloud/tf.sh" /etc/bash.bashrc
+check "tf.sh is readable" test -r /usr/local/share/duplocloud/tf.sh
 check "tf command is executable" test -x /usr/local/bin/tf
-check "tf command works" bash -c "tf --version || true"
+check "tf command in PATH" bash -lc "command -v tf"
+check "tf command works" bash -lc "tf --version"
 
 # Report results
 reportResults

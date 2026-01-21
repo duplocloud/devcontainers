@@ -18,6 +18,7 @@
     }
   },
   "dependsOn": {
-    "ghcr.io/duplocloud/devcontainers/ai:latest": {}
-  }
+    "./ai": {}
+  },
+  "onCreateCommand": "bash /usr/local/share/ai-codex-on-create.sh"
 }

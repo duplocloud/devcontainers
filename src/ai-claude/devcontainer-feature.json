@@ -19,5 +19,6 @@
   },
   "dependsOn": {
     "ghcr.io/duplocloud/devcontainers/ai:latest": {}
-  }
+  },
+  "onCreateCommand": "bash /usr/local/share/ai-claude-on-create.sh"
 }

@@ -17,9 +17,11 @@ rm -rf "${TEMP_INSTALL_DIR}"
 mkdir -p "${TEMP_INSTALL_DIR}"
 cp -r "${DUPLO_SKILLS_DIR}"/* "${TEMP_INSTALL_DIR}/"
 
-# Install duplo-skills globally as root
+# Install duplo-skills globally as root from a packed tarball (avoids global symlinks to /tmp)
 cd "${TEMP_INSTALL_DIR}"
-npm install -g .
+TARBALL="$(npm pack --silent)"
+npm install -g "${TARBALL}"
+rm -f "${TARBALL}"
 
 # Cleanup
 rm -rf "${TEMP_INSTALL_DIR}"

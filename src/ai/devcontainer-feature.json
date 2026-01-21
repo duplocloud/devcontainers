@@ -1,6 +1,6 @@
 {
   "id": "ai",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": "AI Base",
   "description": "Base dependencies for AI CLI tools including Node.js and skills downloader",
   "options": {},

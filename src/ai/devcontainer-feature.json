@@ -1,0 +1,10 @@
+{
+  "id": "ai",
+  "version": "1.0.0",
+  "name": "AI Base",
+  "description": "Base dependencies for AI CLI tools including Node.js and skills downloader",
+  "options": {},
+  "installsAfter": [
+    "ghcr.io/devcontainers/features/node"
+  ]
+}

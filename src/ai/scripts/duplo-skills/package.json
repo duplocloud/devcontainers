@@ -1,0 +1,15 @@
+{
+  "name": "@duplocloud/duplo-skills",
+  "version": "1.0.0",
+  "description": "Download and verify skills from duplocloud/ai-ops releases",
+  "bin": {
+    "duplo-skills": "./index.js"
+  },
+  "keywords": [
+    "duplocloud",
+    "skills",
+    "ai"
+  ],
+  "author": "DuploCloud",
+  "license": "MIT"
+}

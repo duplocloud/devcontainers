@@ -4,6 +4,32 @@ set -e
 echo "Installing 1Password CLI..."
 
 FEATURE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENABLED="${ENABLED:-true}"
+
+# Always install the on-create script (required by devcontainer-feature.json)
+# Copy on-create script to a global location
+cp "${FEATURE_DIR}/on-create.sh" /usr/local/share/onepassword-on-create.sh
+chmod 755 /usr/local/share/onepassword-on-create.sh
+
+# Save feature options to config file for use during onCreate lifecycle hook
+mkdir -p /usr/local/etc
+cat <<EOF > /usr/local/etc/onepassword-feature.conf
+OP_ENABLED="${ENABLED}"
+VAULT="${VAULT:-}"
+VAULTID="${VAULTID:-}"
+ACCOUNT="${ACCOUNT:-my.1password.com}"
+USEREMAIL="${USEREMAIL:-}"
+DISABLEINTERACTIVE="${DISABLEINTERACTIVE:-false}"
+AUTOSSH="${AUTOSSH:-false}"
+SSHSECRETNAMES="${SSHSECRETNAMES:-}"
+SSHSECRETTAGS="${SSHSECRETTAGS:-ssh}"
+EOF
+chmod 644 /usr/local/etc/onepassword-feature.conf
+
+if [ "${ENABLED}" = "false" ]; then
+    echo "1Password CLI feature is disabled, skipping installation."
+    exit 0
+fi
 
 # Install required dependencies (curl/gpg/fzf/jq may not exist on vanilla images)
 apt-get update
@@ -31,24 +57,6 @@ apt-get update
 apt-get install -y 1password-cli
 apt-get clean
 rm -rf /var/lib/apt/lists/*
-
-# Copy on-create script to a global location
-cp "${FEATURE_DIR}/on-create.sh" /usr/local/share/onepassword-on-create.sh
-chmod 755 /usr/local/share/onepassword-on-create.sh
-
-# Save feature options to config file for use during onCreate lifecycle hook
-mkdir -p /usr/local/etc
-cat <<EOF > /usr/local/etc/onepassword-feature.conf
-VAULT="${VAULT:-}"
-VAULTID="${VAULTID:-}"
-ACCOUNT="${ACCOUNT:-my.1password.com}"
-USEREMAIL="${USEREMAIL:-}"
-DISABLEINTERACTIVE="${DISABLEINTERACTIVE:-false}"
-AUTOSSH="${AUTOSSH:-false}"
-SSHSECRETNAMES="${SSHSECRETNAMES:-}"
-SSHSECRETTAGS="${SSHSECRETTAGS:-ssh}"
-EOF
-chmod 644 /usr/local/etc/onepassword-feature.conf
 
 # Configure environment variables globally
 cat <<EOF >> /etc/environment

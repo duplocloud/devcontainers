@@ -12,6 +12,12 @@ if [ -f /usr/local/etc/onepassword-feature.conf ]; then
   source /usr/local/etc/onepassword-feature.conf
 fi
 
+# Check if feature is enabled
+if [ "${OP_ENABLED:-true}" = "false" ]; then
+    echo "1Password CLI feature is disabled, skipping configuration."
+    exit 0
+fi
+
 # Ensure .ssh directory exists with proper permissions
 mkdir -p "${USER_HOME}/.ssh"
 chmod 700 "${USER_HOME}/.ssh"

@@ -8,6 +8,32 @@ echo "Installing OpenVPN client..."
 _REMOTE_USER="${_REMOTE_USER:-root}"
 _REMOTE_USER_HOME="${_REMOTE_USER_HOME:-/root}"
 
+# Check if feature is enabled
+ENABLED="${ENABLED:-true}"
+
+# Always install the lifecycle scripts (required by devcontainer-feature.json)
+# but save the enabled state so they can exit early if disabled
+mkdir -p /usr/local/share
+
+# Copy lifecycle scripts to a global location
+cp -f "$(dirname "${BASH_SOURCE[0]}")/on-create.sh" /usr/local/share/openvpn-on-create.sh
+cp -f "$(dirname "${BASH_SOURCE[0]}")/post-start.sh" /usr/local/share/openvpn-post-start.sh
+chmod +x /usr/local/share/openvpn-on-create.sh
+chmod +x /usr/local/share/openvpn-post-start.sh
+
+# Save feature options to config file for use during lifecycle hooks
+mkdir -p /usr/local/etc
+cat <<EOF > /usr/local/etc/openvpn-feature.conf
+OVPN_ENABLED="${ENABLED}"
+OVPN_AUTOCONNECT="${AUTOCONNECT:-true}"
+EOF
+chmod 644 /usr/local/etc/openvpn-feature.conf
+
+if [ "${ENABLED}" = "false" ]; then
+    echo "OpenVPN feature is disabled, skipping installation."
+    exit 0
+fi
+
 # Install openvpn client and git (git may not exist on vanilla images)
 apt-get update
 apt-get -y install --no-install-recommends openvpn git
@@ -29,14 +55,5 @@ if ! grep -q "^\.ovpn$" "${_REMOTE_USER_HOME}/.gitignore_global" 2>/dev/null; th
     echo ".ovpn" >> "${_REMOTE_USER_HOME}/.gitignore_global"
     chown ${_REMOTE_USER}:${_REMOTE_USER} "${_REMOTE_USER_HOME}/.gitignore_global"
 fi
-
-# Copy init and post-start scripts to a global location
-cp -f "$(dirname "${BASH_SOURCE[0]}")/init.sh" /usr/local/share/openvpn-init.sh
-cp -f "$(dirname "${BASH_SOURCE[0]}")/post-start.sh" /usr/local/share/openvpn-post-start.sh
-chmod +x /usr/local/share/openvpn-init.sh
-chmod +x /usr/local/share/openvpn-post-start.sh
-
-# Save the autoConnect option for use by init/post-start scripts
-echo "${AUTOCONNECT:-true}" > /usr/local/share/openvpn-autoconnect
 
 echo "OpenVPN client installed successfully!"

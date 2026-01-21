@@ -1,10 +1,15 @@
 {
   "name": "OpenVPN Client",
   "id": "openvpn",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Installs OpenVPN client for connecting to VPN networks",
   "documentationURL": "https://github.com/duplocloud/devcontainers/tree/main/src/openvpn",
   "options": {
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable the OpenVPN feature. Set to false to skip installation completely."
+    },
     "autoConnect": {
       "type": "boolean",
       "default": true,
@@ -15,6 +20,6 @@
     "NET_ADMIN",
     "NET_RAW"
   ],
-  "onCreateCommand": "bash /usr/local/share/openvpn-init.sh",
+  "onCreateCommand": "bash /usr/local/share/openvpn-on-create.sh",
   "postStartCommand": "bash /usr/local/share/openvpn-post-start.sh"
 }

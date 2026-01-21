@@ -2,9 +2,19 @@
 
 set -e
 
+# Load feature configuration
+if [ -f /usr/local/etc/openvpn-feature.conf ]; then
+  source /usr/local/etc/openvpn-feature.conf
+fi
+
+# Check if feature is enabled
+if [ "${OVPN_ENABLED:-true}" = "false" ]; then
+    echo "OpenVPN feature is disabled, skipping initialization."
+    exit 0
+fi
+
 # Check if autoConnect is disabled
-AUTO_CONNECT=$(cat /usr/local/share/openvpn-autoconnect 2>/dev/null || echo "true")
-if [ "${AUTO_CONNECT}" = "false" ]; then
+if [ "${OVPN_AUTOCONNECT:-true}" = "false" ]; then
     echo "OpenVPN autoConnect is disabled, skipping initialization."
     exit 0
 fi

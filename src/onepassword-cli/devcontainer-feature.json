@@ -1,10 +1,15 @@
 {
   "name": "1Password CLI",
   "id": "onepassword-cli",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Installs 1Password CLI with optional auto SSH key configuration",
   "documentationURL": "https://github.com/duplocloud/devcontainers/tree/main/src/onepassword-cli",
   "options": {
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable the 1Password CLI feature. Set to false to skip installation completely."
+    },
     "vault": {
       "type": "string",
       "default": "",

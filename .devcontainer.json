@@ -7,8 +7,9 @@
 		},
 		"./.devcontainer/features/onepassword-cli": {
 			"autoSsh": true,
-			"sshSecretNames": "Github Personal",
-			"vault": "Homelab"
+			"sshSecretNames": "${localEnv:OP_SSH_SECRET}",
+			"vault": "Employee",
+			"account": "duplocloudinc.1password.com"
 		}
 	},
 	"runArgs": [

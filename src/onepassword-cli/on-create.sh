@@ -75,7 +75,13 @@ function signin_account() {
   
   # Get raw session token
   local session_token
-  session_token=$(op signin --account "$account" --raw 2>&1)
+  if [ -n "${OP_PASSWD:-}" ]; then
+    # Password provided via OP_PASSWD environment variable
+    session_token=$(echo "$OP_PASSWD" | op signin --account "$account" --raw 2>&1)
+  else
+    # Interactive prompt for password
+    session_token=$(op signin --account "$account" --raw 2>&1)
+  fi
   local signin_status=$?
   
   if [ $signin_status -eq 0 ]; then
@@ -463,7 +469,7 @@ EOF
   # Add IdentityFile - public key if agent available, private key otherwise
   if [ "$has_agent" = "true" ]; then
     # Agent available: use public key so agent can lookup private key
-    # echo "    IdentityFile ~/.ssh/${key_name}.pub" >> "$ssh_config"
+    echo "    IdentityFile ~/.ssh/${key_name}.pub" >> "$ssh_config"
     if [ "${SSH_AUTH_SOCK:-}" = "$HOME/.1password/agent.sock" ]; then
       echo "1Password agent detected for SSH host configuration, we must be on Linux"
       echo "    IdentityFile ~/.ssh/${key_name}.pub" >> "$ssh_config"

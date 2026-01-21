@@ -36,6 +36,7 @@ The feature supports multiple authentication methods (checked in order):
 2. **Service Account**: Set `OP_SERVICE_ACCOUNT_TOKEN` environment variable
 3. **Desktop App Agent** (Linux only): Automatically detected if `~/.1password/agent.sock` exists
 4. **Interactive Login**: Prompts for email/password (can be disabled with `disableInteractive: true`)
+   - Supports automated password via `OP_PASSWD` environment variable (useful for CI/CD)
 
 If no authentication method succeeds, only the CLI is installed and a warning is displayed.
 
@@ -67,6 +68,25 @@ To enable Desktop App authentication on Linux:
    ```
 
 This authentication method allows biometric authentication within the devcontainer on Linux hosts.
+
+### Automated Password Authentication
+
+For interactive login (method 4), you can optionally provide the password non-interactively by setting the `OP_PASSWD` environment variable. When `OP_PASSWD` is set, the password is passed via stdin to the `op signin` command, eliminating the need for manual password entry.
+
+**Use cases:**
+- CI/CD pipelines where manual password entry isn't possible
+- Automated devcontainer builds
+- Scripts that need to authenticate without user interaction
+
+**Security note:** Be cautious when using `OP_PASSWD` as it exposes your password in environment variables. Consider using more secure authentication methods like Service Account tokens or Connect Server for production environments.
+
+**Example:**
+```bash
+export OP_PASSWD="your-password-here"
+# The on-create script will automatically use this for signin
+```
+
+When `OP_PASSWD` is not set, the feature falls back to the standard interactive password prompt.
 
 ### Session Persistence (available in all terminal sessions):
 

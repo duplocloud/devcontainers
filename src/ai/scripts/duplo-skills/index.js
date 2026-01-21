@@ -110,11 +110,19 @@ function calculateChecksum(buffer) {
   return crypto.createHash('sha256').update(buffer).digest('hex');
 }
 
-function findAssetWithChecksum(assets, skillName) {
-  const skillAsset = assets.find(a => a.name === `${skillName}.skill`);
-  const checksumAsset = assets.find(a => a.name === `${skillName}.skill.sha256`);
-  
-  return { skillAsset, checksumAsset };
+function findSkillAsset(assets, skillName) {
+  return assets.find(a => a.name === `${skillName}.skill`);
+}
+
+function expectedSha256FromAssetDigest(asset) {
+  if (!asset || !asset.digest) return null;
+  if (typeof asset.digest !== 'string') return null;
+  if (!asset.digest.startsWith('sha256:')) return null;
+  return asset.digest.slice('sha256:'.length);
+}
+
+function findChecksumAsset(assets, skillName) {
+  return assets.find(a => a.name === `${skillName}.skill.sha256`);
 }
 
 async function downloadSkill(installDir, skillName) {
@@ -125,8 +133,8 @@ async function downloadSkill(installDir, skillName) {
     const release = await getRelease(version);
     console.log(`Found release: ${release.tag_name}`);
     
-    // Find the skill asset and checksum
-    const { skillAsset, checksumAsset } = findAssetWithChecksum(release.assets, skillName);
+    // Find the skill asset
+    const skillAsset = findSkillAsset(release.assets, skillName);
     
     if (!skillAsset) {
       throw new Error(`Skill "${skillName}.skill" not found in release ${release.tag_name}`);
@@ -135,19 +143,29 @@ async function downloadSkill(installDir, skillName) {
     console.log(`Downloading ${skillAsset.name}...`);
     const skillData = await httpsGet(skillAsset.browser_download_url);
     
-    // Verify checksum if available
-    if (checksumAsset) {
-      console.log(`Verifying checksum...`);
+    // Verify checksum (prefer GitHub's asset digest when available)
+    console.log(`Verifying checksum...`);
+    const actualHash = calculateChecksum(skillData);
+    const digestHash = expectedSha256FromAssetDigest(skillAsset);
+
+    if (digestHash) {
+      if (digestHash !== actualHash) {
+        throw new Error(`Checksum mismatch!\n  Expected: ${digestHash}\n  Got: ${actualHash}`);
+      }
+      console.log(`✓ Checksum verified`);
+    } else {
+      const checksumAsset = findChecksumAsset(release.assets, skillName);
+      if (!checksumAsset) {
+        throw new Error(`No checksum available for "${skillName}.skill" (missing asset digest and "${skillName}.skill.sha256")`);
+      }
+
       const expectedChecksum = await httpsGet(checksumAsset.browser_download_url);
       const expectedHash = expectedChecksum.toString().trim().split(/\s+/)[0];
-      const actualHash = calculateChecksum(skillData);
-      
+
       if (expectedHash !== actualHash) {
         throw new Error(`Checksum mismatch!\n  Expected: ${expectedHash}\n  Got: ${actualHash}`);
       }
       console.log(`✓ Checksum verified`);
-    } else {
-      console.log(`⚠ No checksum available for verification`);
     }
     
     // Ensure install directory exists

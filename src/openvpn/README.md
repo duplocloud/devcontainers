@@ -17,6 +17,7 @@ Installs OpenVPN client for connecting to VPN networks
 |-----|-----|-----|-----|
 | enabled | Enable the OpenVPN feature. Set to false to skip installation completely. | boolean | true |
 | autoConnect | Automatically initialize and connect to VPN on container start. Set to false to only install the OpenVPN client. | boolean | true |
+| configDir | Directory where OpenVPN configuration files will be stored. If empty, defaults to $XDG_CONFIG_HOME/openvpn or $HOME/.config/openvpn. | string | - |
 
 # OpenVPN CLI Feature
 
@@ -40,6 +41,26 @@ This is required because the devcontainer features spec does not support adding 
   "runArgs": ["--device=/dev/net/tun"]
 }
 ```
+
+## Configuration Directory
+
+By default, OpenVPN configuration files are stored in:
+- `$XDG_CONFIG_HOME/openvpn` if `XDG_CONFIG_HOME` is set
+- `$HOME/.config/openvpn` otherwise
+
+You can customize this location using the `configDir` option:
+
+```json
+{
+  "features": {
+    "ghcr.io/duplocloud/devcontainers/openvpn:1": {
+      "configDir": "/custom/path/to/openvpn"
+    }
+  }
+}
+```
+
+This is useful when you need to store configuration in a specific location for persistence or access control reasons.
 
 
 ---

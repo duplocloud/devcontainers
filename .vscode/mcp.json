@@ -1,0 +1,18 @@
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "description": "The API Key for JinaAI",
+      "id": "jina_api_key",
+      "password": true
+    }
+  ],
+  "servers": {
+    "jina": {
+      "url": "https://mcp.jina.ai/v1",
+      "headers": {
+        "Authorization": "Bearer ${input:jina_api_key}"
+      }
+    }
+  }
+}

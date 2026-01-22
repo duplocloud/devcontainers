@@ -13,16 +13,25 @@ jobs:
       fail-fast: false
       matrix:
         features:
+        - ai
+        - ai-claude
+        - ai-codex
+        - ai-gemini
         - aws-cli
-        - onepassword-cli
-        - gcloud-cli
         - direnv
+        - duploctl
+        - gcloud-cli
+        - git
+        - kubernetes
+        - onepassword-cli
+        - openvpn
         - terraform
         baseImage:
         - debian:latest
         - ubuntu:latest
         - mcr.microsoft.com/devcontainers/base:ubuntu
         - mcr.microsoft.com/devcontainers/python:3
+        - nodejs/devcontainer:nightly
     steps:
       - uses: actions/checkout@v6
 
@@ -38,11 +47,17 @@ jobs:
       fail-fast: false
       matrix:
         features:
+          - ai-claude
+          - ai-codex
+          - ai-gemini
           - aws-cli
-          - onepassword-cli
+          - duploctl
           - gcloud-cli
-          - terraform
+          - git
+          - kubernetes
+          - onepassword-cli
           - openvpn
+          - terraform
     steps:
       - uses: actions/checkout@v6
 

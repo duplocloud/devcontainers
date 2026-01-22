@@ -1,6 +1,6 @@
 {
   "id": "ai-codex",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": "OpenAI Codex AI",
   "description": "OpenAI's Codex CLI with VS Code integration and skills support",
   "options": {
@@ -19,5 +19,6 @@
   },
   "dependsOn": {
     "ghcr.io/duplocloud/devcontainers/ai:latest": {}
-  }
+  },
+  "onCreateCommand": "bash /usr/local/share/ai-codex-on-create.sh"
 }

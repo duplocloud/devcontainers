@@ -8,9 +8,9 @@ echo "Installing @anthropic-ai/claude-code..."
 npm install -g @anthropic-ai/claude-code
 
 # Verify installation
-if command -v claude-code &> /dev/null; then
+if command -v claude &> /dev/null; then
   echo "✓ Claude Code CLI installed successfully"
-  claude-code --version || true
+  claude --version || true
 else
   echo "⚠ Claude Code CLI installation could not be verified"
 fi

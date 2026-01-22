@@ -14,6 +14,11 @@
       "type": "boolean",
       "default": true,
       "description": "Automatically initialize and connect to VPN on container start. Set to false to only install the OpenVPN client."
+    },
+    "configDir": {
+      "type": "string",
+      "default": "",
+      "description": "Directory where OpenVPN configuration files will be stored. If empty, defaults to $XDG_CONFIG_HOME/openvpn or $HOME/.config/openvpn."
     }
   },
   "capAdd": [

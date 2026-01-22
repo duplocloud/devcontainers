@@ -21,14 +21,20 @@ fi
 
 echo "Initializing OpenVPN configuration..."
 
-# Get the workspace directory - use the containerWorkspaceFolder if available
-if [ -z "${_CONTAINER_WORKSPACE_FOLDER}" ]; then
-    WORKSPACE_DIR="${_REMOTE_WORKSPACE_FOLDER:-/workspace}"
-else
-    WORKSPACE_DIR="${_CONTAINER_WORKSPACE_FOLDER}"
-fi
+# Use devcontainer environment variables with fallbacks
+USER_HOME="${_REMOTE_USER_HOME:-$HOME}"
 
-OVPN_DIR="${WORKSPACE_DIR}/.ovpn"
+# Determine OpenVPN configuration directory
+if [ -n "${OVPN_CONFIG_DIR}" ]; then
+  # Use the user-specified config directory
+  OVPN_DIR="${OVPN_CONFIG_DIR}"
+elif [ -n "${XDG_CONFIG_HOME}" ] && [ -w "${XDG_CONFIG_HOME}" ]; then
+  # Use XDG_CONFIG_HOME if set and writable
+  OVPN_DIR="${XDG_CONFIG_HOME}/openvpn"
+else
+  # Fall back to HOME/.config/openvpn
+  OVPN_DIR="${USER_HOME}/.config/openvpn"
+fi
 
 # Create .ovpn directory if it doesn't exist
 mkdir -p "${OVPN_DIR}"

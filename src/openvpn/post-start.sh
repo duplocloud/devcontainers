@@ -21,14 +21,17 @@ fi
 
 echo "Running OpenVPN post-start script..."
 
-# Get the workspace directory - use the containerWorkspaceFolder if available
-if [ -z "${_CONTAINER_WORKSPACE_FOLDER}" ]; then
-    WORKSPACE_DIR="${_REMOTE_WORKSPACE_FOLDER:-/workspace}"
+# Determine OpenVPN configuration directory
+if [ -n "${OVPN_CONFIG_DIR}" ]; then
+  # Use the user-specified config directory
+  OVPN_DIR="${OVPN_CONFIG_DIR}"
+elif [ -n "${XDG_CONFIG_HOME}" ]; then
+  # Use XDG_CONFIG_HOME if set
+  OVPN_DIR="${XDG_CONFIG_HOME}/openvpn"
 else
-    WORKSPACE_DIR="${_CONTAINER_WORKSPACE_FOLDER}"
+  # Fall back to HOME/.config/openvpn
+  OVPN_DIR="${HOME}/.config/openvpn"
 fi
-
-OVPN_DIR="${WORKSPACE_DIR}/.ovpn"
 
 # Switch to the .ovpn folder if it exists
 if [ ! -d "${OVPN_DIR}" ]; then

@@ -18,7 +18,7 @@
 	"runArgs": [
 		"--env-file=${localWorkspaceFolder}/.env"
 	],
-		"containerEnv": {
+	"containerEnv": {
 		"WORKSPACE_FOLDER": "${containerWorkspaceFolder}",
 		"CLOUDSDK_PYTHON": "/usr/local/bin/python",
 		"KUBECONFIG": "${containerWorkspaceFolder}/config/kubeconfig.yaml",
@@ -44,9 +44,7 @@
 				"GitHub.copilot-chat",
 				"GitHub.vscode-pull-request-github"
 			],
-			"settings": {
-
-			}
+			"settings": {}
 		}
 	}
 }

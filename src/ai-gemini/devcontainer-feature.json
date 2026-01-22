@@ -1,6 +1,6 @@
 {
   "id": "ai-gemini",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": "Gemini CLI AI",
   "description": "Google's Gemini CLI with VS Code integration and skills support",
   "options": {

@@ -1,6 +1,6 @@
 {
   "id": "kubernetes",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": "Kubernetes",
   "description": "Configures Kubernetes with DuploCloud JIT authentication and VS Code extensions.",
   "options": {

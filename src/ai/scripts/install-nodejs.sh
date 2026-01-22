@@ -17,6 +17,10 @@ has_python() {
   command -v python >/dev/null 2>&1 || command -v python3 >/dev/null 2>&1
 }
 
+has_npm() {
+  command -v npm >/dev/null 2>&1
+}
+
 ensure_min_node() {
   if ! has_node; then
     return 1
@@ -26,6 +30,31 @@ ensure_min_node() {
   major="$(node_major)"
   if [[ "$major" -ge "$MIN_NODE_MAJOR" ]]; then
     echo "✓ Node.js already installed: v$(node -p 'process.versions.node')"
+    
+    # Also verify npm is available
+    if ! has_npm; then
+      echo "⚠ npm not found in PATH, attempting to locate..."
+      # Try to find npm in common locations
+      local npm_candidates=(
+        "/usr/local/bin/npm"
+        "/usr/bin/npm"
+        "$(dirname "$(command -v node)")/npm"
+      )
+      for npm_path in "${npm_candidates[@]}"; do
+        if [[ -x "$npm_path" ]]; then
+          echo "Found npm at $npm_path"
+          export PATH="$(dirname "$npm_path"):$PATH"
+          if has_npm; then
+            echo "✓ npm is now available: v$(npm -v)"
+            return 0
+          fi
+        fi
+      done
+      echo "npm not found; will attempt reinstall"
+      return 1
+    fi
+    
+    echo "✓ npm is available: v$(npm -v)"
     return 0
   fi
 

@@ -43,8 +43,11 @@ load_nvm() {
   for nvm_sh in "${candidates[@]}"; do
     if [[ -s "$nvm_sh" ]]; then
       echo "Found nvm at $nvm_sh, loading it..."
+      # Temporarily disable unbound variable check for nvm
       # shellcheck disable=SC1090,SC1091
+      set +u
       source "$nvm_sh"
+      set -u
       if command -v nvm >/dev/null 2>&1; then
         return 0
       fi
@@ -60,8 +63,11 @@ install_with_nvm() {
   fi
 
   echo "Installing Node.js LTS via nvm..."
+  # Temporarily disable unbound variable check for nvm commands
+  set +u
   nvm install --lts
   nvm use --lts
+  set -u
 
   ensure_min_node
 }

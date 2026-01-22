@@ -21,16 +21,19 @@ fi
 
 echo "Initializing OpenVPN configuration..."
 
+# Use devcontainer environment variables with fallbacks
+USER_HOME="${_REMOTE_USER_HOME:-$HOME}"
+
 # Determine OpenVPN configuration directory
 if [ -n "${OVPN_CONFIG_DIR}" ]; then
   # Use the user-specified config directory
   OVPN_DIR="${OVPN_CONFIG_DIR}"
-elif [ -n "${XDG_CONFIG_HOME}" ]; then
-  # Use XDG_CONFIG_HOME if set
+elif [ -n "${XDG_CONFIG_HOME}" ] && [ -w "${XDG_CONFIG_HOME}" ]; then
+  # Use XDG_CONFIG_HOME if set and writable
   OVPN_DIR="${XDG_CONFIG_HOME}/openvpn"
 else
   # Fall back to HOME/.config/openvpn
-  OVPN_DIR="${HOME}/.config/openvpn"
+  OVPN_DIR="${USER_HOME}/.config/openvpn"
 fi
 
 # Create .ovpn directory if it doesn't exist

@@ -2,6 +2,7 @@
 	"name": "Duplocloud Devcontainers",
 	"image": "mcr.microsoft.com/vscode/devcontainers/python:3.11",
 	"features": {
+		"ghcr.io/devcontainers/features/node:1": {},
 		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
 			"moby": false
 		},
@@ -13,6 +14,7 @@
 		},
 		"./.devcontainer/features/ai-codex": {}
 	},
+	"postCreateCommand": "bash .devcontainer/post-create.sh",
 	"runArgs": [
 		"--env-file=${localWorkspaceFolder}/.env"
 	],

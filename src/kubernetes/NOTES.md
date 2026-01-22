@@ -10,18 +10,34 @@ Add to your `.devcontainer/devcontainer.json`:
 {
   "features": {
     "ghcr.io/duplocloud/devcontainers/duploctl:1": {},
-    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
     "ghcr.io/duplocloud/devcontainers/kubernetes:1": {}
   }
 }
 ```
 
 This will:
-- Install kubectl, helm, and minikube (from official feature)
+- Install kubectl, helm, and minikube (automatically via dependency)
 - Install the Kubernetes VS Code extension
 - Generate a kubeconfig on container creation using `duploctl update_kubeconfig`
 
 ### Configuration Options
+
+#### Kubectl Version
+
+Specify the version of kubectl to install:
+
+```json
+{
+  "features": {
+    "ghcr.io/duplocloud/devcontainers/kubernetes:1": {
+      "version": "1.30"
+    }
+  }
+}
+```
+
+**Default:** `1.32`  
+**Note:** Defaults to 1.32 instead of "latest" to avoid [known upstream bugs](https://github.com/devcontainers/features/issues/1410) with URL construction in the kubectl-helm-minikube feature.
 
 #### JIT Authentication
 
@@ -115,8 +131,8 @@ Scope into a specific DuploCloud tenant:
     "ghcr.io/duplocloud/devcontainers/duploctl:1": {
       "version": "latest"
     },
-    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
     "ghcr.io/duplocloud/devcontainers/kubernetes:1": {
+      "version": "1.32",
       "jit": true,
       "jitAdmin": true,
       "tenant": "dev-team"

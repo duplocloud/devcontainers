@@ -26,6 +26,7 @@ mkdir -p /usr/local/etc
 cat <<EOF > /usr/local/etc/openvpn-feature.conf
 OVPN_ENABLED="${ENABLED}"
 OVPN_AUTOCONNECT="${AUTOCONNECT:-true}"
+OVPN_CONFIG_DIR="${CONFIGDIR:-}"
 EOF
 chmod 644 /usr/local/etc/openvpn-feature.conf
 

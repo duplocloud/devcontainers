@@ -20,3 +20,23 @@ This is required because the devcontainer features spec does not support adding 
   "runArgs": ["--device=/dev/net/tun"]
 }
 ```
+
+## Configuration Directory
+
+By default, OpenVPN configuration files are stored in:
+- `$XDG_CONFIG_HOME/openvpn` if `XDG_CONFIG_HOME` is set
+- `$HOME/.config/openvpn` otherwise
+
+You can customize this location using the `configDir` option:
+
+```json
+{
+  "features": {
+    "ghcr.io/duplocloud/devcontainers/openvpn:1": {
+      "configDir": "/custom/path/to/openvpn"
+    }
+  }
+}
+```
+
+This is useful when you need to store configuration in a specific location for persistence or access control reasons.

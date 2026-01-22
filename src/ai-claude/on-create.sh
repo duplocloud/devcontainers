@@ -61,10 +61,10 @@ for SKILL in "${SKILL_ARRAY[@]}"; do
   echo "Installing skill: ${SKILL}"
   
   if duplo-skills --dir "${SKILLS_DIR}" --skill "${SKILL}"; then
-    ((INSTALLED_COUNT++))
+    ((INSTALLED_COUNT+=1))
   else
     echo "⚠ Failed to install skill: ${SKILL}"
-    ((FAILED_COUNT++))
+    ((FAILED_COUNT+=1))
   fi
 done
 

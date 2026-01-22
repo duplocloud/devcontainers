@@ -36,6 +36,21 @@ function generate_kubeconfig() {
     echo "You can manually configure kubectl once duploctl is available."
     return 0
   fi
+
+  # Some duploctl distributions may not be compatible with the base image.
+  # Treat failures as non-fatal so the container can still start.
+  set +e
+  duploctl --version >/dev/null 2>&1
+  local duploctl_version_rc=$?
+  if [ ${duploctl_version_rc} -ne 0 ]; then
+    duploctl version >/dev/null 2>&1
+    duploctl_version_rc=$?
+  fi
+  set -e
+  if [ ${duploctl_version_rc} -ne 0 ]; then
+    echo "Warning: duploctl is installed but failed to execute. Skipping kubeconfig generation."
+    return 0
+  fi
   
   # Ensure .kube directory exists
   mkdir -p "${USER_HOME}/.kube"
@@ -74,7 +89,15 @@ function generate_kubeconfig() {
   
   # Execute duploctl command
   echo "Running: duploctl ${cmd_args[*]}"
+  set +e
   duploctl "${cmd_args[@]}"
+  local rc=$?
+  set -e
+  if [ ${rc} -ne 0 ]; then
+    echo "Warning: duploctl failed (exit code ${rc}). Skipping kubeconfig generation."
+    echo "You can run 'duploctl jit update_kubeconfig' manually after configuring Duplo credentials."
+    return 0
+  fi
   
   echo "Kubeconfig generated successfully."
   echo "Run 'kubectl config get-contexts' to see available contexts."

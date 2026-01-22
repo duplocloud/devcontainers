@@ -1,6 +1,6 @@
 {
   "id": "ai-claude",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": "Claude Code AI",
   "description": "Anthropic's Claude Code CLI with VS Code integration and skills support",
   "options": {

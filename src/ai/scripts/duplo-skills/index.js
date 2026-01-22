@@ -9,6 +9,7 @@ const AdmZip = require('adm-zip');
 const REPO_OWNER = 'duplocloud';
 const REPO_NAME = 'ai-ops';
 const GITHUB_API = 'https://api.github.com';
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
 
 // Extract ZIP file using adm-zip library
 function extractZip(buffer, targetDir) {
@@ -38,6 +39,8 @@ Options:
 
 Environment Variables:
   DUPLO_SKILLS_VERSION    Version to download (default: "latest")
+  GITHUB_TOKEN            GitHub token for API authentication (optional)
+  GH_TOKEN                Alternative GitHub token variable (optional)
 
 Example:
   duplo-skills --dir ~/.claude/skills --skill tf-module
@@ -78,16 +81,20 @@ function parseArgs() {
   return parsed;
 }
 
-function httpsGet(url) {
+function httpsGet(url, useAuth = true) {
   return new Promise((resolve, reject) => {
-    https.get(url, {
-      headers: {
-        'User-Agent': 'duplo-skills'
-      }
-    }, (res) => {
+    const headers = {
+      'User-Agent': 'duplo-skills'
+    };
+    
+    if (useAuth && GITHUB_TOKEN) {
+      headers['Authorization'] = `token ${GITHUB_TOKEN}`;
+    }
+    
+    https.get(url, { headers }, (res) => {
       if (res.statusCode === 302 || res.statusCode === 301) {
-        // Follow redirect
-        return resolve(httpsGet(res.headers.location));
+        // Follow redirect (don't use auth for redirects to CDN)
+        return resolve(httpsGet(res.headers.location, false));
       }
       
       if (res.statusCode !== 200) {
@@ -104,7 +111,8 @@ function httpsGet(url) {
 
 async function getLatestRelease() {
   const url = `${GITHUB_API}/repos/${REPO_OWNER}/${REPO_NAME}/releases/latest`;
-  console.log(`Fetching latest release from ${REPO_OWNER}/${REPO_NAME}...`);
+  const authStatus = GITHUB_TOKEN ? '(authenticated)' : '(unauthenticated)';
+  console.log(`Fetching latest release from ${REPO_OWNER}/${REPO_NAME}... ${authStatus}`);
   
   const data = await httpsGet(url);
   return JSON.parse(data.toString());
@@ -117,7 +125,8 @@ async function getRelease(version) {
   
   // Specific version
   const url = `${GITHUB_API}/repos/${REPO_OWNER}/${REPO_NAME}/releases/tags/${version}`;
-  console.log(`Fetching release ${version} from ${REPO_OWNER}/${REPO_NAME}...`);
+  const authStatus = GITHUB_TOKEN ? '(authenticated)' : '(unauthenticated)';
+  console.log(`Fetching release ${version} from ${REPO_OWNER}/${REPO_NAME}... ${authStatus}`);
   
   const data = await httpsGet(url);
   return JSON.parse(data.toString());
@@ -158,7 +167,7 @@ async function downloadSkill(installDir, skillName) {
     }
     
     console.log(`Downloading ${skillAsset.name}...`);
-    const skillData = await httpsGet(skillAsset.browser_download_url);
+    const skillData = await httpsGet(skillAsset.browser_download_url, false);
     
     // Verify checksum (prefer GitHub's asset digest when available)
     console.log(`Verifying checksum...`);
@@ -176,7 +185,7 @@ async function downloadSkill(installDir, skillName) {
         throw new Error(`No checksum available for "${skillName}.skill" (missing asset digest and "${skillName}.skill.sha256")`);
       }
 
-      const expectedChecksum = await httpsGet(checksumAsset.browser_download_url);
+      const expectedChecksum = await httpsGet(checksumAsset.browser_download_url, false);
       const expectedHash = expectedChecksum.toString().trim().split(/\s+/)[0];
 
       if (expectedHash !== actualHash) {

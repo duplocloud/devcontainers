@@ -29,6 +29,23 @@ duplo-skills --dir ~/.claude/skills --skill tf-module
 DUPLO_SKILLS_VERSION=v0.0.2 duplo-skills --dir ~/.gemini/skills --skill api-design
 ```
 
+### Authentication
+
+The `duplo-skills` CLI supports GitHub token authentication to avoid API rate limits:
+
+- **Authenticated requests**: If `GITHUB_TOKEN` or `GH_TOKEN` is set, the CLI uses it for GitHub API calls
+- **Unauthenticated fallback**: If no token is provided, the CLI falls back to unauthenticated requests
+- **Rate limits**: GitHub allows 60 requests/hour for unauthenticated requests, 5000/hour for authenticated
+- **CI/CD environments**: GitHub Actions automatically provides `GITHUB_TOKEN` in the workflow environment
+
+```bash
+# With authentication (recommended for CI/CD)
+GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} duplo-skills --dir ~/.claude/skills --skill tf-module
+
+# Without authentication (may hit rate limits)
+duplo-skills --dir ~/.claude/skills --skill tf-module
+```
+
 ### Available Skills
 
 Skills are published in the [duplocloud/ai-ops releases](https://github.com/duplocloud/ai-ops/releases). Each release contains `.skill` archive files (ZIP format) with corresponding checksums. The archives contain the skill directory structure and are automatically extracted during installation.
@@ -44,6 +61,8 @@ Skills are packaged as `.skill` files using the following structure:
 ### Environment Variables
 
 - `DUPLO_SKILLS_VERSION` - Specify which release version to download from (default: "latest")
+- `GITHUB_TOKEN` - GitHub personal access token for authenticated API requests (optional, helps avoid rate limits)
+- `GH_TOKEN` - Alternative GitHub token variable (optional)
 
 ## References
 

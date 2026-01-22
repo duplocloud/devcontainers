@@ -18,9 +18,9 @@ check "post-start script exists" test -x /usr/local/share/openvpn-post-start.sh
 check "config file exists" test -f /usr/local/etc/openvpn-feature.conf
 check "enabled persisted true" grep -q '^OVPN_ENABLED="true"$' /usr/local/etc/openvpn-feature.conf
 
-check "on-create runs safely" bash -lc "_CONTAINER_WORKSPACE_FOLDER=/tmp/openvpn-test bash /usr/local/share/openvpn-on-create.sh"
-check "on-create created .ovpn directory" test -d /tmp/openvpn-test/.ovpn
-check "post-start runs safely" bash -lc "_CONTAINER_WORKSPACE_FOLDER=/tmp/openvpn-test bash /usr/local/share/openvpn-post-start.sh"
+check "on-create runs safely" bash -lc "HOME=/tmp/openvpn-test bash /usr/local/share/openvpn-on-create.sh"
+check "on-create created config directory" test -d /tmp/openvpn-test/.config/openvpn
+check "post-start runs safely" bash -lc "HOME=/tmp/openvpn-test bash /usr/local/share/openvpn-post-start.sh"
 
 # Report results
 reportResults

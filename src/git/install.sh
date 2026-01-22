@@ -8,6 +8,11 @@ USER_HOME="${_REMOTE_USER_HOME:-/root}"
 USER_NAME="${_REMOTE_USER:-root}"
 FEATURE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Install GitKraken CLI if option is enabled
+if [ "${INSTALLGITKRAKEN}" = "true" ]; then
+  bash "${FEATURE_DIR}/install-gitkraken.sh"
+fi
+
 # Install git plugins to a location in PATH
 PLUGIN_DIR="/usr/local/bin"
 

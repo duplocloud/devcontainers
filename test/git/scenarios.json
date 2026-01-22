@@ -15,5 +15,13 @@
         "provider": "github"
       }
     }
+  },
+  "with_gitkraken": {
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+      "git": {
+        "installGitKraken": true
+      }
+    }
   }
 }

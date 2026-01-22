@@ -1,0 +1,22 @@
+{
+  "with_copilot": {
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+      "git": {},
+      "github": {
+        "installCopilot": true
+      }
+    }
+  },
+  "with_copilot_and_skills": {
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+      "ai": {},
+      "git": {},
+      "github": {
+        "installCopilot": true,
+        "skills": "test-skill"
+      }
+    }
+  }
+}

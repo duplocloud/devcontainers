@@ -1,0 +1,35 @@
+{
+  "id": "github",
+  "version": "1.0.0",
+  "name": "GitHub CLI",
+  "description": "Installs GitHub CLI (gh) with optional GitHub Copilot CLI and skills support",
+  "documentationURL": "https://github.com/duplocloud/devcontainers/tree/main/src/github",
+  "options": {
+    "installCopilot": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install GitHub Copilot CLI extension"
+    },
+    "skills": {
+      "type": "string",
+      "default": "",
+      "description": "Comma-separated list of Copilot skills to install (e.g., 'tf-module,api-design'). Requires installCopilot to be enabled."
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "github.vscode-pull-request-github"
+      ]
+    }
+  },
+  "installsAfter": [
+    "ghcr.io/duplocloud/devcontainers/git",
+    "ghcr.io/duplocloud/devcontainers/ai"
+  ],
+  "dependsOn": {
+    "ghcr.io/duplocloud/devcontainers/git:1": {},
+    "ghcr.io/duplocloud/devcontainers/ai:latest": {}
+  },
+  "onCreateCommand": "bash /usr/local/share/github-on-create.sh"
+}

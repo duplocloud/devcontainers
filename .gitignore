@@ -1,3 +1,4 @@
 .env
 stuff
 config/
+node_modules/

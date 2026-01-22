@@ -56,7 +56,9 @@ check "duplo-skills download + checksum" bash -lc '
 
   out="$(duplo-skills --dir "$INSTALL_DIR" --skill "$SKILL" 2>&1)"
   echo "$out" | grep -q "Checksum verified"
-  test -f "$INSTALL_DIR/${SKILL}.skill"
+  echo "$out" | grep -q "Extracting"
+  test -d "$INSTALL_DIR/${SKILL}"
+  test -f "$INSTALL_DIR/${SKILL}/SKILL.md"
 '
 
 # Report results

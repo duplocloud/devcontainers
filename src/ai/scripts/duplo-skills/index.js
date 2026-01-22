@@ -4,10 +4,27 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const AdmZip = require('adm-zip');
 
 const REPO_OWNER = 'duplocloud';
 const REPO_NAME = 'ai-ops';
 const GITHUB_API = 'https://api.github.com';
+
+// Extract ZIP file using adm-zip library
+function extractZip(buffer, targetDir) {
+  const zip = new AdmZip(buffer);
+  const zipEntries = zip.getEntries();
+  
+  // Extract all files
+  zip.extractAllTo(targetDir, false);
+  
+  // Log extracted files (excluding directories)
+  zipEntries.forEach(entry => {
+    if (!entry.isDirectory) {
+      console.log(`  ✓ Extracted: ${entry.entryName}`);
+    }
+  });
+}
 
 function showUsage() {
   console.log(`
@@ -174,12 +191,12 @@ async function downloadSkill(installDir, skillName) {
       fs.mkdirSync(fullPath, { recursive: true });
     }
     
-    // Write the skill file
-    const skillPath = path.join(fullPath, `${skillName}.skill`);
-    fs.writeFileSync(skillPath, skillData);
-    console.log(`✓ Skill installed to: ${skillPath}`);
+    // Extract the skill archive
+    console.log(`Extracting ${skillName}...`);
+    extractZip(skillData, fullPath);
+    console.log(`✓ Skill installed to: ${fullPath}/${skillName}`);
     
-    return skillPath;
+    return path.join(fullPath, skillName);
     
   } catch (error) {
     console.error(`Error downloading skill: ${error.message}`);

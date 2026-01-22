@@ -21,8 +21,8 @@ check "git-setenv is installed" command -v git-setenv
 # Check on-create script exists
 check "on-create script exists" test -f /usr/local/share/git-on-create.sh
 
-# Check config file exists
-check "config file exists" test -f /usr/local/etc/git-feature.conf
+# Check GitKraken installer is available for other features
+check "gitkraken installer exists" test -f /usr/local/share/install-gitkraken.sh
 
 # Report results
 reportResults

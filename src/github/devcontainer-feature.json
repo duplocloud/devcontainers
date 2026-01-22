@@ -1,6 +1,6 @@
 {
   "id": "github",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": "GitHub CLI",
   "description": "Installs GitHub CLI (gh) with optional GitHub Copilot CLI and skills support",
   "documentationURL": "https://github.com/duplocloud/devcontainers/tree/main/src/github",
@@ -10,10 +10,15 @@
       "default": false,
       "description": "Install GitHub Copilot CLI extension"
     },
+    "installGitKraken": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install GitKraken CLI (gk) for enhanced git operations. Requires git feature to be installed."
+    },
     "skills": {
       "type": "string",
       "default": "",
-      "description": "Comma-separated list of Copilot skills to install (e.g., 'tf-module,api-design'). Requires installCopilot to be enabled."
+      "description": "Comma-separated list of Copilot skills to install (e.g., 'tf-module,api-design'). Skills are always downloaded when specified, regardless of authentication status."
     }
   },
   "customizations": {

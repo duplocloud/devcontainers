@@ -8,9 +8,14 @@ USER_HOME="${_REMOTE_USER_HOME:-/root}"
 USER_NAME="${_REMOTE_USER:-root}"
 FEATURE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Install GitKraken CLI if option is enabled
+# Copy GitKraken installer to container for later use
+# This allows other features (like github) to optionally install it
+cp "${FEATURE_DIR}/install-gitkraken.sh" /usr/local/share/install-gitkraken.sh
+chmod 755 /usr/local/share/install-gitkraken.sh
+
+# Install GitKraken CLI if option is enabled in this feature
 if [ "${INSTALLGITKRAKEN}" = "true" ]; then
-  bash "${FEATURE_DIR}/install-gitkraken.sh"
+  bash /usr/local/share/install-gitkraken.sh
 fi
 
 # Install git plugins to a location in PATH
@@ -28,15 +33,5 @@ done
 # Copy on-create script to a global location
 cp "${FEATURE_DIR}/scripts/on-create.sh" /usr/local/share/git-on-create.sh
 chmod 755 /usr/local/share/git-on-create.sh
-
-# Save feature options to config file for use during onCreate lifecycle hook
-mkdir -p /usr/local/etc
-cat <<EOF > /usr/local/etc/git-feature.conf
-PROVIDER="${PROVIDER:-none}"
-USERNAME="${USERNAME:-}"
-USEREMAIL="${USEREMAIL:-}"
-SIGNINGKEY="${SIGNINGKEY:-}"
-EOF
-chmod 644 /usr/local/etc/git-feature.conf
 
 echo "Git feature installed successfully!"

@@ -106,6 +106,16 @@ if [ "${INSTALLCOPILOT}" = "true" ]; then
   bash "${FEATURE_DIR}/install-copilot.sh"
 fi
 
+# Install GitKraken CLI if option is enabled and installer is available
+if [ "${INSTALLGITKRAKEN}" = "true" ]; then
+  if [ -f /usr/local/share/install-gitkraken.sh ]; then
+    echo "Installing GitKraken CLI from git feature..."
+    bash /usr/local/share/install-gitkraken.sh
+  else
+    echo "WARNING: GitKraken installer not found. The git feature must be installed first."
+  fi
+fi
+
 # Copy on-create script to shared location
 cp "${FEATURE_DIR}/on-create.sh" /usr/local/share/github-on-create.sh
 chmod 755 /usr/local/share/github-on-create.sh
@@ -114,6 +124,7 @@ chmod 755 /usr/local/share/github-on-create.sh
 mkdir -p /usr/local/etc
 cat <<EOF > /usr/local/etc/github-feature.conf
 INSTALLCOPILOT="${INSTALLCOPILOT:-false}"
+INSTALLGITKRAKEN="${INSTALLGITKRAKEN:-false}"
 SKILLS="${SKILLS:-}"
 EOF
 chmod 644 /usr/local/etc/github-feature.conf

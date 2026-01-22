@@ -12,30 +12,8 @@ if [ -f /usr/local/etc/github-feature.conf ]; then
   source /usr/local/etc/github-feature.conf
 fi
 
-# If Copilot is not enabled, exit early
-if [ "${INSTALLCOPILOT}" != "true" ]; then
-  echo "GitHub Copilot CLI not enabled. Skipping skill installation."
-  exit 0
-fi
-
-# Check if duplo-skills is available
-if ! command -v duplo-skills &> /dev/null; then
-  echo "⚠ duplo-skills command not found. Skills will not be installed."
-  echo "To use skills, include the 'ai' feature as a dependency."
-  exit 0
-fi
-
-echo "Installing GitHub Copilot skills..."
-
-# Skills directory for Copilot (user scope)
-COPILOT_HOME="${COPILOT_HOME:-${USER_HOME}/.github-copilot}"
-SKILLS_DIR="${COPILOT_HOME}/skills"
-mkdir -p "${COPILOT_HOME}" "${SKILLS_DIR}"
-
-# Get skills from option
+# Get skills from option and environment variable first
 FEATURE_SKILLS="${SKILLS:-}"
-
-# Get skills from environment variable
 ENV_SKILLS="${DUPLO_AI_SKILLS:-}"
 
 # Merge skills from both sources
@@ -51,12 +29,28 @@ if [ -n "${ENV_SKILLS}" ]; then
   fi
 fi
 
-# If no skills specified, exit early
-if [ -z "${ALL_SKILLS}" ]; then
+# If skills are specified, always download them regardless of Copilot installation status
+if [ -n "${ALL_SKILLS}" ]; then
+  echo "Skills specified, ensuring download: ${ALL_SKILLS}"
+  
+  # Check if duplo-skills is available
+  if ! command -v duplo-skills &> /dev/null; then
+    echo "⚠ duplo-skills command not found. Skills cannot be installed."
+    echo "To use skills, include the 'ai' feature as a dependency."
+    exit 0
+  fi
+else
+  # No skills specified, exit early
   echo "No skills specified. Skipping skill installation."
-  echo "To install skills, set 'skills' option or DUPLO_AI_SKILLS environment variable."
   exit 0
 fi
+
+echo "Installing GitHub Copilot skills..."
+
+# Skills directory for Copilot (user scope)
+COPILOT_HOME="${COPILOT_HOME:-${USER_HOME}/.github-copilot}"
+SKILLS_DIR="${COPILOT_HOME}/skills"
+mkdir -p "${COPILOT_HOME}" "${SKILLS_DIR}"
 
 # Convert comma-separated list to array
 IFS=',' read -ra SKILL_ARRAY <<< "${ALL_SKILLS}"

@@ -15,7 +15,26 @@
       "git": {},
       "github": {
         "installCopilot": true,
-        "skills": "test-skill"
+        "skills": "tf-module"
+      }
+    }
+  },
+  "with_skills_only": {
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+      "ai": {},
+      "git": {},
+      "github": {
+        "skills": "tf-module"
+      }
+    }
+  },
+  "with_gitkraken": {
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+      "git": {},
+      "github": {
+        "installGitKraken": true
       }
     }
   }

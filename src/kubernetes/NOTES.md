@@ -22,22 +22,7 @@ This will:
 
 ### Configuration Options
 
-#### Kubectl Version
-
-Specify the version of kubectl to install:
-
-```json
-{
-  "features": {
-    "ghcr.io/duplocloud/devcontainers/kubernetes:1": {
-      "version": "1.30"
-    }
-  }
-}
-```
-
-**Default:** `1.32`  
-**Note:** Defaults to 1.32 instead of "latest" to avoid [known upstream bugs](https://github.com/devcontainers/features/issues/1410) with URL construction in the kubectl-helm-minikube feature.
+**Note:** This feature installs kubectl 1.32 by default (hardcoded to avoid [known upstream bugs](https://github.com/devcontainers/features/issues/1410) with "latest"). The kubectl version cannot be customized due to devcontainer spec limitations with passing options to dependency features.
 
 #### JIT Authentication
 
@@ -132,7 +117,6 @@ Scope into a specific DuploCloud tenant:
       "version": "latest"
     },
     "ghcr.io/duplocloud/devcontainers/kubernetes:1": {
-      "version": "1.32",
       "jit": true,
       "jitAdmin": true,
       "tenant": "dev-team"

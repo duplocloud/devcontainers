@@ -24,14 +24,5 @@
         "tenant": "test-tenant"
       }
     }
-  },
-  "custom_version": {
-    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
-    "features": {
-      "kubernetes": {
-        "version": "1.30",
-        "jit": false
-      }
-    }
   }
 }

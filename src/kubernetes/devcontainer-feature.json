@@ -4,11 +4,6 @@
   "name": "Kubernetes",
   "description": "Configures Kubernetes with DuploCloud JIT authentication and VS Code extensions.",
   "options": {
-    "version": {
-      "type": "string",
-      "default": "1.32",
-      "description": "Version of kubectl to install. Defaults to 1.32 to avoid upstream bugs with 'latest'."
-    },
     "jit": {
       "type": "boolean",
       "default": true,
@@ -47,7 +42,7 @@
   ],
   "dependsOn": {
     "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
-      "version": "${VERSION}"
+      "version": "1.32"
     }
   },
   "onCreateCommand": "bash /usr/local/share/kubernetes-on-create.sh"

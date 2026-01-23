@@ -17,8 +17,8 @@ check "gemini installed" command -v gemini
 # Test that skills directory exists
 check "gemini skills dir exists" test -d "${USER_HOME}/.gemini/skills"
 
-# Test that tf-module skill was installed
-check "tf-module skill installed" test -f "${USER_HOME}/.gemini/skills/tf-module.skill"
+# Test that tf-module skill was installed (extracted directory)
+check "tf-module skill installed" test -f "${USER_HOME}/.gemini/skills/tf-module/SKILL.md"
 
 # Report results
 reportResults

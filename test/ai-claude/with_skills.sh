@@ -17,8 +17,8 @@ check "claude installed" command -v claude
 # Test that skills directory exists
 check "claude skills dir exists" test -d "${USER_HOME}/.claude/skills"
 
-# Test that tf-module skill was installed
-check "tf-module skill installed" test -f "${USER_HOME}/.claude/skills/tf-module.skill"
+# Test that tf-module skill was installed (extracted directory)
+check "tf-module skill installed" test -f "${USER_HOME}/.claude/skills/tf-module/SKILL.md"
 
 # Report results
 reportResults

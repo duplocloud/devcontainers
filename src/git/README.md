@@ -1,7 +1,7 @@
 
 # Git Configuration (git)
 
-Configures git with user settings, signing keys, plugins, and global gitignore
+Installs git plugins and configures global gitignore
 
 ## Example Usage
 
@@ -15,10 +15,6 @@ Configures git with user settings, signing keys, plugins, and global gitignore
 
 | Options Id | Description | Type | Default Value |
 |-----|-----|-----|-----|
-| provider | Git provider to configure default settings for (to be implemented) | string | none |
-| userName | Git user.name value. Falls back to GIT_USER environment variable if not set. | string | - |
-| userEmail | Git user.email value. Falls back to GIT_EMAIL environment variable if not set. | string | - |
-| signingKey | Path to signing key relative to $HOME/.ssh (e.g., 'github.pub'). Leave empty to disable signing. | string | - |
 | installGitKraken | Install GitKraken CLI (gk) for enhanced git operations | boolean | false |
 
 ## Customizations

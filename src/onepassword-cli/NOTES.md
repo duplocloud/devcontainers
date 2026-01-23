@@ -63,7 +63,7 @@ It's recommended to use the following template to use environment variables for 
 }
 ```
 
-Set these env vars in your user environment in one of: `.bashrc`, `.zshrc`, `.bash_profile`. Or wherever that will load for user sessions.  
+Set these env vars in your user environment in one of: `.bashrc`, `.zshrc`, `.bash_profile`. You can even set these values in the Codespaces secrets UI for secure storage.
 
 ## Authentication Methods
 
@@ -136,6 +136,8 @@ The feature configures these environment variables globally:
 - `OP_ACCOUNT` - The 1Password account domain
 - `OP_VAULT_NAME` - The default vault name (if configured)
 - `OP_VAULT` - The vault ID (set at runtime after authentication)
+
+These can also be set manually in `containerEnv` to override the options in the feature. 
 
 ## Auto SSH Configuration
 

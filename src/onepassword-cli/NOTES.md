@@ -48,6 +48,23 @@ This is useful when you want to temporarily disable 1Password integration withou
 - No SSH configuration is performed
 - The on-create script exits immediately
 
+## Use Local Environment Variables
+
+It's recommended to use the following template to use environment variables for injecting the features options. This way each user can configure the functionality from their own env. The localEnv is also how to read secrets from codespaces, ie each secret is an env var. 
+
+```json
+"ghcr.io/duplocloud/devcontainers/onepassword-cli:1": {
+  "enabled": "${localEnv:OP_CLI_ENABLED}",
+  "autoSsh": "${localEnv:OP_AUTO_SSH}",
+  "sshSecretNames": "${localEnv:OP_SSH_SECRET}",
+  "vault": "${localEnv:OP_VAULT_NAME}",
+  "account": "${localEnv:OP_ACCOUNT}",
+  "userEmail": "${localEnv:USER_EMAIL}"
+}
+```
+
+Set these env vars in your user environment in one of: `.bashrc`, `.zshrc`, `.bash_profile`. Or wherever that will load for user sessions.  
+
 ## Authentication Methods
 
 The feature supports multiple authentication methods (checked in order):

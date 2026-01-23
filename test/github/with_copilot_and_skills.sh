@@ -18,7 +18,7 @@ check "duplo-skills available" command -v duplo-skills
 
 # Verify skills directory was created
 USER_HOME="${_REMOTE_USER_HOME:-$HOME}"
-COPILOT_HOME="${COPILOT_HOME:-${USER_HOME}/.github-copilot}"
+COPILOT_HOME="${COPILOT_HOME:-${USER_HOME}/.copilot}"
 SKILLS_DIR="${COPILOT_HOME}/skills"
 
 check "skills directory exists" test -d "${SKILLS_DIR}"

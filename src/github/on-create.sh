@@ -48,7 +48,7 @@ fi
 echo "Installing GitHub Copilot skills..."
 
 # Skills directory for Copilot (user scope)
-COPILOT_HOME="${COPILOT_HOME:-${USER_HOME}/.github-copilot}"
+COPILOT_HOME="${COPILOT_HOME:-${USER_HOME}/.copilot}"
 SKILLS_DIR="${COPILOT_HOME}/skills"
 mkdir -p "${COPILOT_HOME}" "${SKILLS_DIR}"
 

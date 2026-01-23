@@ -130,3 +130,4 @@ We recommend this is as a sane starting point: `mcr.microsoft.com/vscode/devcont
 - [Available Dev Container Features](https://containers.dev/features)
 - [Schema for Features json](https://containers.dev/implementors/features/)
 - [Node.js Devcontainer](https://github.com/nodejs/devcontainer)
+- [Copilot Agent Skills](https://code.visualstudio.com/docs/copilot/customization/agent-skills)

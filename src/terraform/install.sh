@@ -4,6 +4,8 @@ set -e
 echo "Installing Terraform DuploCloud helpers..."
 
 # Install fzf dependency
+# Remove problematic yarn repo if present (missing GPG key in some base images)
+rm -f /etc/apt/sources.list.d/yarn.list
 apt-get update
 apt-get install -y --no-install-recommends fzf
 apt-get clean

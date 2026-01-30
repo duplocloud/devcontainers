@@ -43,11 +43,15 @@ function tf-ctx() {
 
 # discover the variables for this workspace
 function tf-workspace-dir() {
+  local module_dir module
   if [ -z "$TF_WORKSPACE_DIR" ]; then
     dir=$(pwd)
     while [[ "$dir" != "/" ]]; do
       if [[ -d "$dir/config" ]]; then
-        echo "$dir/config"
+        # Use config/<module> as default
+        module_dir=$(pwd)
+        module=$(basename "$module_dir")
+        echo "$dir/config/$module"
         break
       fi
       dir=$(dirname "$dir")

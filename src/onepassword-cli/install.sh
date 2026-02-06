@@ -31,6 +31,13 @@ if [ "${ENABLED}" = "false" ]; then
     exit 0
 fi
 
+# Remove or disable problematic repositories that may have missing GPG keys
+# This is a workaround for yarn and other repositories that may be present in the base image
+if [ -f /etc/apt/sources.list.d/yarn.list ]; then
+    echo "Disabling yarn repository due to missing GPG key..."
+    mv /etc/apt/sources.list.d/yarn.list /etc/apt/sources.list.d/yarn.list.disabled || true
+fi
+
 # Install required dependencies (curl/gpg/fzf/jq may not exist on vanilla images)
 apt-get update
 apt-get install -y --no-install-recommends curl gpg ca-certificates fzf jq

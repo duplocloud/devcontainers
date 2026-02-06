@@ -367,6 +367,31 @@ ssh-add -l
 
 This should list the keys available in your 1Password SSH agent.
 
+## Troubleshooting
+
+### Debian Trixie GPG Key Issues
+
+If you encounter errors like `Missing key FF7CB5667B542092084BBDC562D54FD4003F6525` during `apt-get update`, this is likely due to the Debian Trixie base image having a yarn repository with a missing GPG key.
+
+The install script automatically disables problematic repositories (like yarn) before running apt-get update. If you still encounter issues:
+
+1. Check for other repositories with missing keys:
+   ```bash
+   ls /etc/apt/sources.list.d/
+   ```
+
+2. Manually disable them before the 1Password CLI feature installs:
+   ```json
+   {
+     "features": {
+       "ghcr.io/duplocloud/devcontainers/onepassword-cli:1": {}
+     },
+     "postCreateCommand": "rm -f /etc/apt/sources.list.d/*.list.disabled"
+   }
+   ```
+
+This issue is specific to Debian Trixie which uses sequoia (`sqv`) for GPG verification instead of the traditional apt-key approach.
+
 ## References 
 
 - [1Password CLI Documentation](https://developer.1password.com/docs/cli) - Official CLI reference and setup guides

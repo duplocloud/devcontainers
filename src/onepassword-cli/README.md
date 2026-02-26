@@ -20,7 +20,7 @@ Installs 1Password CLI with optional auto SSH key configuration
 | vaultID | Default vault ID to use. Sets OP_VAULT environment variable. Preferred over vault name when both are specified. | string | - |
 | account | 1Password account domain. Sets OP_ACCOUNT environment variable. | string | my.1password.com |
 | userEmail | User email for 1Password account (optional, used when adding account). | string | - |
-| disableInteractive | Disable interactive login prompt when no auth method is detected. | boolean | false |
+| interactive | Enable interactive login prompt when no auth method is detected. | boolean | false |
 | autoSsh | Automatically fetch and configure SSH keys from 1Password. | boolean | false |
 | sshSecretNames | Comma-separated list of 1Password secret names containing SSH keys. | string | - |
 | sshSecretTags | Tags to search for SSH secrets (used when sshSecretNames is empty). | string | ssh |
@@ -99,7 +99,7 @@ The feature supports multiple authentication methods (checked in order):
 1. **Connect Server**: Set `OP_CONNECT_HOST` and `OP_CONNECT_TOKEN` environment variables
 2. **Service Account**: Set `OP_SERVICE_ACCOUNT_TOKEN` environment variable
 3. **Desktop App Agent** (Linux only): Automatically detected if `~/.1password/agent.sock` exists
-4. **Interactive Login**: Prompts for email/password (can be disabled with `disableInteractive: true`)
+4. **Interactive Login**: Prompts for email/password (disabled by default, enable with `interactive: true`)
    - Supports automated password via `OP_PASSWD` environment variable (see [Interactive Login Requirements](#interactive-login-requirements))
 
 If no authentication method succeeds, only the CLI is installed and a warning is displayed.

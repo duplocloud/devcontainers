@@ -15,13 +15,7 @@ Installs git plugins and configures global gitignore
 
 | Options Id | Description | Type | Default Value |
 |-----|-----|-----|-----|
-| installGitKraken | Install GitKraken CLI (gk) for enhanced git operations | boolean | false |
 
-## Customizations
-
-### VS Code Extensions
-
-- `eamodio.gitlens`
 
 ## Usage
 

@@ -59,12 +59,13 @@ function add_account() {
   echo "Adding 1Password account: $account (shorthand: $shorthand)"
   
   local cmd="op account add --address '$account' --shorthand '$shorthand'"
-  
+
   if [ -n "$email" ]; then
     cmd="$cmd --email '$email'"
   fi
-  
-  if eval "$cmd"; then
+
+  # Use timeout to prevent hanging when no one is at the terminal
+  if timeout 15 bash -c "$cmd" </dev/null; then
     echo "Account added successfully"
     return 0
   else
@@ -83,10 +84,10 @@ function signin_account() {
   local session_token
   if [ -n "${OP_PASSWD:-}" ]; then
     # Password provided via OP_PASSWD environment variable
-    session_token=$(echo "$OP_PASSWD" | op signin --account "$account" --raw 2>&1)
+    session_token=$(echo "$OP_PASSWD" | timeout 30 op signin --account "$account" --raw 2>&1)
   else
-    # Interactive prompt for password
-    session_token=$(op signin --account "$account" --raw 2>&1)
+    # Interactive prompt for password (timeout prevents hanging in CI/test)
+    session_token=$(timeout 15 op signin --account "$account" --raw 2>&1)
   fi
   local signin_status=$?
   

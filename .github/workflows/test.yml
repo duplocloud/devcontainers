@@ -26,6 +26,8 @@ jobs:
         - duploctl
         - gcloud-cli
         - git
+        - github
+        - gitkraken
         - kubernetes
         - onepassword-cli
         - openvpn
@@ -51,6 +53,7 @@ jobs:
       fail-fast: false
       matrix:
         features:
+          - ai
           - ai-claude
           - ai-codex
           - ai-gemini
@@ -58,6 +61,7 @@ jobs:
           - duploctl
           - gcloud-cli
           - git
+          - github
           - kubernetes
           - onepassword-cli
           - openvpn

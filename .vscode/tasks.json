@@ -4,6 +4,43 @@
     "env": {}
   },
   "inputs": [],
+  "problemMatchers": [
+    {
+      "name": "devcontainer-features-test",
+      "owner": "devcontainer",
+      "source": "devcontainer-features-test",
+      "severity": "error",
+      "pattern": [
+        {
+          "regexp": "^❌ Failed:\\s+'([^']+)'",
+          "message": 1
+        }
+      ],
+      "background": {
+        "activeOnStart": true,
+        "beginsPattern": "^⏳ Building test container",
+        "endsPattern": "^\\s*================== TEST REPORT =================="
+      }
+    },
+    {
+      "name": "devcontainer-test-check-failure",
+      "owner": "devcontainer",
+      "pattern": {
+        "regexp": "^❌ (.+) check failed\\.",
+        "message": 1,
+        "severity": "error"
+      }
+    },
+    {
+      "name": "devcontainer-feature-install-error",
+      "owner": "devcontainer",
+      "pattern": {
+        "regexp": "^ERROR: Feature \"([^\"]+)\" .* failed to install!",
+        "message": 1,
+        "severity": "error"
+      }
+    }
+  ],
   "tasks": [
     {
       "type": "process",
@@ -19,10 +56,14 @@
       },
       "command": "devcontainer",
       "args": [
-        "feature", 
+        "features", 
         "test"
       ],
-      "problemMatcher": []
+      "problemMatcher": [
+        "$devcontainer-features-test",
+        "$devcontainer-test-check-failure",
+        "$devcontainer-feature-install-error"
+      ]
     }
   ]
 }

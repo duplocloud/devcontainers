@@ -4,13 +4,16 @@
 # includes the 'onepassword-cli' Feature with no options.
 #
 # For more information, see: https://github.com/devcontainers/cli/blob/main/docs/features/test.md
+#
+# NOTE: Since this test runs with default options (interactive: false),  
+# the onCreateCommand will not attempt interactive authentication.
 
 set -e
 
 # Import test library bundled with the devcontainer CLI
 source dev-container-features-test-lib
 
-# Feature-specific tests
+# Feature-specific tests - just verify installation, not authentication
 check "op is installed" command -v op
 check "op version" op --version
 check "jq is installed" command -v jq
@@ -20,6 +23,9 @@ check "on-create script exists" test -f /usr/local/share/onepassword-on-create.s
 
 # Check config file exists
 check "config file exists" test -f /usr/local/etc/onepassword-feature.conf
+
+# Verify default config values
+check "interactive defaults to false" grep -q '^INTERACTIVE="false"$' /usr/local/etc/onepassword-feature.conf
 
 # Report results
 reportResults

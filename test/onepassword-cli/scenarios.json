@@ -1,4 +1,20 @@
 {
+  "default_noninteractive": {
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+      "onepassword-cli": {
+        "interactive": false
+      }
+    }
+  },
+  "interactive_enabled": {
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+      "onepassword-cli": {
+        "interactive": true
+      }
+    }
+  },
   "disabled": {
     "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
     "features": {

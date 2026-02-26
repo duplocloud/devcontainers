@@ -1,0 +1,28 @@
+{
+  "version": "2.0.0",
+  "options": {
+    "env": {}
+  },
+  "inputs": [],
+  "tasks": [
+    {
+      "type": "process",
+      "label": "Test Devcontainers",
+      "detail": "Run full test suite for devcontainers features",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "icon": {
+        "color": "terminal.ansiMagenta",
+        "id": "thinking"
+      },
+      "command": "devcontainer",
+      "args": [
+        "feature", 
+        "test"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}

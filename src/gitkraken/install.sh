@@ -3,8 +3,17 @@ set -e
 
 echo "Installing GitKraken CLI..."
 
-# GitKraken CLI version
-GK_VERSION="3.1.51"
+# Ensure curl and unzip are available
+if ! command -v curl &> /dev/null; then
+  apt-get update && apt-get install -y curl
+fi
+
+if ! command -v unzip &> /dev/null; then
+  apt-get update && apt-get install -y unzip
+fi
+
+# GitKraken CLI version (from feature option)
+GK_VERSION="${VERSION}"
 
 # Detect OS and architecture
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
@@ -72,3 +81,5 @@ else
   echo "ERROR: GitKraken CLI installation failed"
   exit 1
 fi
+
+echo "GitKraken feature installed successfully!"

@@ -1,0 +1,24 @@
+{
+  "name": "GitKraken",
+  "id": "gitkraken",
+  "version": "1.0.0",
+  "description": "Installs GitKraken CLI (gk) and GitLens VS Code extension for enhanced git operations",
+  "documentationURL": "https://github.com/duplocloud/devcontainers/tree/main/src/gitkraken",
+  "options": {
+    "version": {
+      "type": "string",
+      "default": "3.1.51",
+      "description": "GitKraken CLI version to install"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "eamodio.gitlens"
+      ]
+    }
+  },
+  "dependsOn": {
+    "ghcr.io/duplocloud/devcontainers/git:1": {}
+  }
+}

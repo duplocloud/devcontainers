@@ -22,6 +22,7 @@ The following devcontainer features are available in this repository:
 - **[direnv](src/direnv/)** - Installs direnv and a DuploCloud direnvrc
 - **[gcloud-cli](src/gcloud-cli/)** - Installs Google Cloud CLI with multi-architecture support
 - **[git](src/git/)** - Configures git with user settings, signing keys, plugins, and global gitignore
+- **[gitkraken](src/gitkraken/)** - Installs GitKraken CLI and GitLens VS Code extension
 - **[onepassword-cli](src/onepassword-cli/)** - Installs 1Password CLI with automatic SSH key configuration
 - **[openvpn](src/openvpn/)** - Installs OpenVPN client for connecting to VPN networks
 - **[terraform](src/terraform/)** - Installs Terraform with DuploCloud-specific helper functions
@@ -115,6 +116,27 @@ Full documentation: [Dev Container Features Testing Guide](https://github.com/de
 
 See [Feature Starter Repo](https://github.com/devcontainers/feature-starter) for additional testing patterns.
 
+## Feature Dependencies
+
+> **Note:** The `dependsOn` property in devcontainer features only ensures that dependent features are installed—it does **not** pass options between features. If you need to configure options for a dependent feature, you must explicitly include it in your `devcontainer.json` with the desired options. Manually including a feature satisfies any `dependsOn` requirements from other features.
+
+Example with `gitkraken` which depends on `git`:
+
+```json
+{
+  "features": {
+    // GitKraken will automatically install git feature
+    "ghcr.io/duplocloud/devcontainers/gitkraken:1": {},
+    
+    // Explicitly include git to configure its options
+    "ghcr.io/duplocloud/devcontainers/git:1": {
+      "userName": "Your Name",
+      "userEmail": "you@example.com"
+    }
+  }
+}
+```
+
 ## Devcontainer Base Image
 
 You can use any docker image you like for the base image.
@@ -131,3 +153,6 @@ We recommend this is as a sane starting point: `mcr.microsoft.com/vscode/devcont
 - [Schema for Features json](https://containers.dev/implementors/features/)
 - [Node.js Devcontainer](https://github.com/nodejs/devcontainer)
 - [Copilot Agent Skills](https://code.visualstudio.com/docs/copilot/customization/agent-skills)
+- [GitKraken CLI Documentation](https://www.gitkraken.com/cli)
+- [GitLens VS Code Extension](https://marketplace.visualstudio.com/items?itemName=eamodio.gitlens)
+- [GitKraken Website](https://www.gitkraken.com/gitlens)

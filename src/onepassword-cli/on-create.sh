@@ -188,14 +188,16 @@ function check_authentication() {
     return 0
   fi
 
+  # Check if interactive authentication is disabled by configuration FIRST
+  # This prevents hanging in test environments or CI/CD pipelines
+  if [ "$INTERACTIVE" != "true" ]; then
+    echo "Interactive authentication disabled by configuration (interactive=false)"
+    return 1
+  fi
+
   # Session-based authentication requires interactive terminal
   if ! is_terminal_interactive; then
     echo "Non-interactive terminal detected, skipping session-based authentication"
-    return 1
-  fi
-  
-  if [ "$DISABLEINTERACTIVE" = "true" ]; then
-    echo "Interactive authentication disabled by configuration"
     return 1
   fi
 

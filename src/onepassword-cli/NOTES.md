@@ -72,7 +72,7 @@ The feature supports multiple authentication methods (checked in order):
 1. **Connect Server**: Set `OP_CONNECT_HOST` and `OP_CONNECT_TOKEN` environment variables
 2. **Service Account**: Set `OP_SERVICE_ACCOUNT_TOKEN` environment variable
 3. **Desktop App Agent** (Linux only): Automatically detected if `~/.1password/agent.sock` exists
-4. **Interactive Login**: Prompts for email/password (can be disabled with `disableInteractive: true`)
+4. **Interactive Login**: Prompts for email/password (disabled by default, enable with `interactive: true`)
    - Supports automated password via `OP_PASSWD` environment variable (see [Interactive Login Requirements](#interactive-login-requirements))
 
 If no authentication method succeeds, only the CLI is installed and a warning is displayed.

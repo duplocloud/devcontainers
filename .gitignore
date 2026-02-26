@@ -2,3 +2,4 @@
 stuff
 config/
 node_modules/
+!.vscode/

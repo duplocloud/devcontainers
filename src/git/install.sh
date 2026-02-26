@@ -8,16 +8,6 @@ USER_HOME="${_REMOTE_USER_HOME:-/root}"
 USER_NAME="${_REMOTE_USER:-root}"
 FEATURE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Copy GitKraken installer to container for later use
-# This allows other features (like github) to optionally install it
-cp "${FEATURE_DIR}/install-gitkraken.sh" /usr/local/share/install-gitkraken.sh
-chmod 755 /usr/local/share/install-gitkraken.sh
-
-# Install GitKraken CLI if option is enabled in this feature
-if [ "${INSTALLGITKRAKEN}" = "true" ]; then
-  bash /usr/local/share/install-gitkraken.sh
-fi
-
 # Install git plugins to a location in PATH
 PLUGIN_DIR="/usr/local/bin"
 

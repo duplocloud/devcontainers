@@ -6,7 +6,30 @@ MIN_NODE_MAJOR="${MIN_NODE_MAJOR:-18}"
 echo "Checking Node.js installation..."
 
 node_major() {
-  node -p "process.versions.node.split('.')[0]" 2>/dev/null || echo "0"
+  if ! command -v node >/dev/null 2>&1; then
+    echo "0"
+    return
+  fi
+  
+  # Try multiple methods to get the version
+  local version
+  
+  # Method 1: Use node to extract major version
+  version=$(node -e "console.log(process.versions.node.split('.')[0])" 2>/dev/null)
+  if [[ -n "$version" && "$version" =~ ^[0-9]+$ ]]; then
+    echo "$version"
+    return
+  fi
+  
+  # Method 2: Parse from node --version output
+  version=$(node --version 2>/dev/null | sed -E 's/^v?([0-9]+)\..*/\1/')
+  if [[ -n "$version" && "$version" =~ ^[0-9]+$ ]]; then
+    echo "$version"
+    return
+  fi
+  
+  # Fallback
+  echo "0"
 }
 
 has_node() {
@@ -29,7 +52,10 @@ ensure_min_node() {
   local major
   major="$(node_major)"
   if [[ "$major" -ge "$MIN_NODE_MAJOR" ]]; then
-    echo "✓ Node.js already installed: v$(node -p 'process.versions.node')"
+    # Try to get full version, fallback to showing major version
+    local full_version
+    full_version=$(node --version 2>/dev/null || echo "v${major}.x")
+    echo "✓ Node.js already installed: ${full_version}"
     
     # Also verify npm is available
     if ! has_npm; then
@@ -118,6 +144,21 @@ install_with_apt_nodesource() {
   apt-get clean
   rm -rf /var/lib/apt/lists/*
 
+  # Refresh PATH cache and verify node is available
+  hash -r 2>/dev/null || true
+  
+  # Give the system a moment to settle
+  sleep 1
+  
+  # Explicitly check if node is now available
+  if ! command -v node >/dev/null 2>&1; then
+    echo "ERROR: node command not found after installation"
+    return 1
+  fi
+  
+  echo "Verifying Node.js installation..."
+  node --version || echo "WARNING: node --version failed"
+  
   ensure_min_node
 }
 

@@ -6,38 +6,43 @@
   "inputs": [],
   "problemMatchers": [
     {
-      "name": "devcontainer-features-test",
-      "owner": "devcontainer",
-      "source": "devcontainer-features-test",
-      "severity": "error",
-      "pattern": [
-        {
-          "regexp": "^❌ Failed:\\s+'([^']+)'",
-          "message": 1
-        }
-      ],
-      "background": {
-        "activeOnStart": true,
-        "beginsPattern": "^⏳ Building test container",
-        "endsPattern": "^\\s*================== TEST REPORT =================="
-      }
-    },
-    {
-      "name": "devcontainer-test-check-failure",
-      "owner": "devcontainer",
-      "pattern": {
-        "regexp": "^❌ (.+) check failed\\.",
-        "message": 1,
-        "severity": "error"
-      }
-    },
-    {
       "name": "devcontainer-feature-install-error",
       "owner": "devcontainer",
+      "source": "devcontainer",
+      "severity": "error",
       "pattern": {
-        "regexp": "^ERROR: Feature \"([^\"]+)\" .* failed to install!",
-        "message": 1,
-        "severity": "error"
+        "regexp": "^(?:#\\d+\\s+[\\d.]+\\s+)?ERROR: Feature \"([^\"]+)\".*failed to install",
+        "message": 1
+      }
+    },
+    {
+      "name": "devcontainer-container-launch-failure",
+      "owner": "devcontainer",
+      "source": "devcontainer",
+      "severity": "error",
+      "pattern": {
+        "regexp": "^\\[-\\] Failed to launch container",
+        "message": 0
+      }
+    },
+    {
+      "name": "devcontainer-build-error",
+      "owner": "devcontainer",
+      "source": "devcontainer",
+      "severity": "error",
+      "pattern": {
+        "regexp": "^ERROR: failed to build: (.+)$",
+        "message": 1
+      }
+    },
+    {
+      "name": "devcontainer-command-failed",
+      "owner": "devcontainer",
+      "source": "devcontainer",
+      "severity": "error",
+      "pattern": {
+        "regexp": "^Command failed: (.+)$",
+        "message": 1
       }
     }
   ],
@@ -60,9 +65,10 @@
         "test"
       ],
       "problemMatcher": [
-        "$devcontainer-features-test",
-        "$devcontainer-test-check-failure",
-        "$devcontainer-feature-install-error"
+        "$devcontainer-feature-install-error",
+        "$devcontainer-container-launch-failure",
+        "$devcontainer-build-error",
+        "$devcontainer-command-failed"
       ]
     }
   ]

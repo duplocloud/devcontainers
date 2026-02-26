@@ -6,7 +6,10 @@ This feature provides the foundation for all AI CLI tools in DuploCloud devconta
 
 - **Node.js Installation**: Automatically checks for and installs Node.js if not present
   - First tries to use nvm if available
-  - Falls back to apt package manager
+  - Falls back to apt package manager (NodeSource LTS repository)
+  - Uses robust version detection with multiple fallback methods
+  - Handles PATH refresh after installation
+  - Minimum required version: Node.js 18+
   - Compatible with [stu-bell/devcontainer-features/node](https://github.com/stu-bell/devcontainer-features/tree/main/src/node)
   
 - **duplo-skills CLI**: Global command for downloading AI skills

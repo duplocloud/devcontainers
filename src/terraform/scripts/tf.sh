@@ -112,7 +112,7 @@ function tf-init() {
     echo "Your active configuration is: $DUPLO_ACCOUNT_ID"
   elif [[ "$GCP_ENABLED" == "true" ]]; then
     echo "Configuring GCP Backend"
-    DUPLO_ACCOUNT_ID="$(gcloud config get project)"
+    DUPLO_ACCOUNT_ID="$(duploctl infrastructure find default --interactive --admin -o string -q Accountid)"
     DEFAULT_BUCKET_NAME=${BUCKET_PREFIX}-${DUPLO_ACCOUNT_ID}
     DUPLO_TF_BUCKET=${DUPLO_TF_BUCKET:-$DEFAULT_BUCKET_NAME}
     TF_ARGS+=(

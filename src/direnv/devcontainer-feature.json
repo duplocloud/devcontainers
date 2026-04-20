@@ -1,7 +1,7 @@
 {
   "name": "Direnv",
   "id": "direnv",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Installs direnv and places a DuploCloud direnvrc at $HOME/direnv/direnvrc",
   "documentationURL": "https://github.com/duplocloud/devcontainers/tree/main/src/direnv",
   "options": {},

@@ -13,10 +13,15 @@ apt-get install -y --no-install-recommends direnv ca-certificates
 apt-get clean
 rm -rf /var/lib/apt/lists/*
 
-# Install direnvrc under $HOME/direnv
+# Install direnvrc and lib under $HOME/direnv
 FEATURE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 mkdir -p "${USER_HOME}/direnv"
 cp -f "${FEATURE_DIR}/direnvrc" "${USER_HOME}/direnv/direnvrc"
+cp -rf "${FEATURE_DIR}/lib" "${USER_HOME}/direnv/lib"
 chown -R "${USER_NAME}:${USER_NAME}" "${USER_HOME}/direnv" 2>/dev/null || true
+
+# Copy on-create script to shared location
+cp "${FEATURE_DIR}/on-create.sh" /usr/local/share/direnv-on-create.sh
+chmod +x /usr/local/share/direnv-on-create.sh
 
 echo "direnv installed successfully."

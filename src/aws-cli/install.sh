@@ -21,21 +21,27 @@ mkdir -p "$USER_HOME/.aws" "$USER_HOME/.aws/cli"
 FEATURE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cp "${FEATURE_DIR}/alias" "$USER_HOME/.aws/cli/alias"
 
-# Copy the AWS JIT configuration script to PATH
-cp "${FEATURE_DIR}/scripts/configure-aws-jit.sh" "/usr/local/bin/configure-aws-jit.sh"
-chmod 755 "/usr/local/bin/configure-aws-jit.sh"
+# Copy the AWS JIT configuration script to shared location
+cp "${FEATURE_DIR}/scripts/configure-aws-jit.sh" /usr/local/share/aws-cli-configure-jit.sh
+chmod +x /usr/local/share/aws-cli-configure-jit.sh
 
-# Write JIT options to config file for use during onCreate lifecycle hook
+# Write feature options to config file for use during onCreate lifecycle hook
 mkdir -p /usr/local/etc
-cat <<EOF > /usr/local/etc/aws-jit.conf
+cat <<EOF > /usr/local/etc/aws-cli-feature.conf
 JIT="${JIT:-false}"
 JITADMIN="${JITADMIN:-false}"
 JITINTERACTIVE="${JITINTERACTIVE:-false}"
 EOF
-chmod 644 /usr/local/etc/aws-jit.conf
+chmod 644 /usr/local/etc/aws-cli-feature.conf
 
 # Set proper permissions on the alias file and AWS config directory
 chmod 644 "$USER_HOME/.aws/cli/alias"
 chown -R "$USER_NAME:$USER_NAME" "$USER_HOME/.aws" 2>/dev/null || true
+
+# Copy helpers and on-create script to shared location
+cp "${FEATURE_DIR}/helpers.sh" /usr/local/share/aws-cli-helpers.sh
+chmod 644 /usr/local/share/aws-cli-helpers.sh
+cp "${FEATURE_DIR}/on-create.sh" /usr/local/share/aws-cli-on-create.sh
+chmod +x /usr/local/share/aws-cli-on-create.sh
 
 echo "AWS CLI custom aliases installed successfully!"

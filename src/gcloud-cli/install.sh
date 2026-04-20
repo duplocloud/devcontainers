@@ -110,7 +110,9 @@ fi
 # Set proper permissions
 chown -R "$USER_NAME:$USER_NAME" "$USER_HOME/google-cloud-sdk" 2>/dev/null || true
 
-# Copy on-create script to shared location
+# Copy helpers and on-create script to shared location
+cp "${FEATURE_DIR}/helpers.sh" /usr/local/share/gcloud-cli-helpers.sh
+chmod 644 /usr/local/share/gcloud-cli-helpers.sh
 cp "${FEATURE_DIR}/on-create.sh" /usr/local/share/gcloud-on-create.sh
 chmod +x /usr/local/share/gcloud-on-create.sh
 

@@ -16,6 +16,9 @@ if [ -f '${USER_HOME}/google-cloud-sdk/path.bash.inc' ]; then . '${USER_HOME}/go
 # Google Cloud CLI - shell command completion
 if [ -f '${USER_HOME}/google-cloud-sdk/completion.bash.inc' ]; then . '${USER_HOME}/google-cloud-sdk/completion.bash.inc'; fi
 
+# Google Cloud CLI - helper functions
+if [ -f '/usr/local/share/gcloud-cli-helpers.sh' ]; then . '/usr/local/share/gcloud-cli-helpers.sh'; fi
+
 EOF
 
 echo "Google Cloud CLI configured successfully!"

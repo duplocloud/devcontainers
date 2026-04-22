@@ -19,6 +19,7 @@ op-credentials-mfa =
         local CREDS CREDS_EXP EXP NOW
         local CACHE_DIR="${HOME}/.aws/cli/cache"
         local CACHE_FILE="${CACHE_DIR}/${AWS_PROFILE}.json"
+        mkdir -p "${HOME}/.aws/cli" "$CACHE_DIR"
 
         # parse ISO-8601 expiry to epoch seconds — works on macOS (BSD date) and Linux (GNU date)
         _parse_exp() {

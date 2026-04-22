@@ -23,7 +23,7 @@ op-credentials-mfa =
 
         # parse ISO-8601 expiry to epoch seconds — works on macOS (BSD date) and Linux (GNU date)
         _parse_exp() {
-            if [[ "$(uname)" == "Darwin" ]]; then
+            if [ "$(uname)" = "Darwin" ]; then
                 date -jf '%Y-%m-%dT%H:%M:%S' "${1%Z}" "+%s" 2>/dev/null
             else
                 date -d "$1" +%s 2>/dev/null

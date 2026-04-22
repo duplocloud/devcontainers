@@ -20,21 +20,30 @@ op-credentials-mfa =
         local CACHE_DIR="${HOME}/.aws/cli/cache"
         local CACHE_FILE="${CACHE_DIR}/${AWS_PROFILE}.json"
 
+        # parse ISO-8601 expiry to epoch seconds — works on macOS (BSD date) and Linux (GNU date)
+        _parse_exp() {
+            if [[ "$(uname)" == "Darwin" ]]; then
+                date -jf '%Y-%m-%dT%H:%M:%S' "${1%Z}" "+%s" 2>/dev/null
+            else
+                date -d "$1" +%s 2>/dev/null
+            fi
+        }
+
         # if the cache file exists, use it
-        if [ -f $CACHE_FILE ]; then
-          CREDS="$(cat $CACHE_FILE)"
-          CREDS_EXP="$(echo "$CREDS" | jq -r '.Credentials.Expiration')"
-          EXP="$(date -jf '%Y-%m-%dT%H:%M:%S' "$CREDS_EXP" "+%s" 2>/dev/null)"
+        if [ -f "$CACHE_FILE" ]; then
+          CREDS="$(cat "$CACHE_FILE")"
+          CREDS_EXP="$(echo "$CREDS" | jq -r '.Credentials.Expiration // empty' 2>/dev/null)"
+          EXP="$(_parse_exp "$CREDS_EXP")"
           NOW="$(date +%s)"
 
-          # regen cache if current one is expired
-          if [ "$EXP" -lt "$NOW" ]; then
+          # regen cache if expired or unparseable (e.g. corrupted/empty cache file)
+          if [ -z "$EXP" ] || [ "$EXP" -lt "$NOW" ]; then
             CREDS="$(aws sts op-mfa "$1" "$2")"
-            echo "$CREDS" > $CACHE_FILE
+            [ -n "$CREDS" ] && echo "$CREDS" > "$CACHE_FILE"
           fi
         else
           CREDS="$(aws sts op-mfa "$1" "$2")"
-          echo "$CREDS" > $CACHE_FILE
+          [ -n "$CREDS" ] && echo "$CREDS" > "$CACHE_FILE"
         fi
 
         echo "$CREDS" | jq -r '.Credentials | . + {Version: 1}'

@@ -1,5 +1,5 @@
 [toplevel]
-whoami = 
+whoami =
     !f() {
         echo "Profile: ${AWS_PROFILE:-default}"
         aws sts get-caller-identity --output=yaml
@@ -7,55 +7,261 @@ whoami =
 
 id = sts get-caller-identity --query "Account" --output text
 
-op-credentials = 
+# ============================================================================
+# op-credentials — 1Password -> AWS credential_process bridge
+# ============================================================================
+#
+# Usage:
+#   aws op-credentials <base-item> [--mfa <mfa-item>] [--vault <vault>]
+#
+# Emits credential_process JSON:
+#   {Version:1, AccessKeyId, SecretAccessKey[, SessionToken, Expiration],
+#    ProviderType}  ("op" for static keys, "opmfa" for MFA sessions)
+#
+# Wire into ~/.aws/config:
+#   [profile foo]
+#   credential_process = aws op-credentials "Foo AWS CLI" --mfa "Foo AWS"
+#
+# NOTE: Python's configparser (which parses this alias file) strips any `#`
+# preceded by whitespace as an inline comment. Comments inside the alias body
+# are therefore blank lines at parse time — they exist for source readers only.
+# Same reason case/esac and ` ; ` between commands are avoided in the body.
+# ============================================================================
+op-credentials =
     !f() {
-        op --vault=${2:-Private} item get "${1}" --format=json \
-        --fields="label=AccessKeyId,label=SecretAccessKey" | \
-        jq 'map({key: .label, value: .value}) | from_entries + {Version: 1}'
-    }; f
+        # --- arg parsing ---
+        # Unknown --flags are silently tolerated so callers can be updated to
+        # pass future flags without breaking older versions of this alias.
+        local base_item="" mfa_item="" vault="Private"
+        while [ $# -gt 0 ]; do
+            if [ "$1" = "--mfa" ]; then
+                mfa_item="$2"
+                shift
+            elif [ "$1" = "--vault" ]; then
+                vault="$2"
+                shift
+            elif [ "${1#--}" != "$1" ]; then
+                :
+            elif [ -z "$base_item" ]; then
+                base_item="$1"
+            fi
+            shift
+        done
 
-op-credentials-mfa = 
-    !f() {
-        local CREDS CREDS_EXP EXP NOW
-        local CACHE_DIR="${HOME}/.aws/cli/cache"
-        local CACHE_FILE="${CACHE_DIR}/${AWS_PROFILE}.json"
-        mkdir -p "${HOME}/.aws/cli" "$CACHE_DIR"
+        if [ -z "$base_item" ]; then
+            echo "usage: aws op-credentials <base-item> [--mfa <mfa-item>] [--vault <vault>]" >&2
+            return 2
+        fi
 
-        # parse ISO-8601 expiry to epoch seconds — works on macOS (BSD date) and Linux (GNU date)
+        # --- platform detection ---
+        # Captured once here and read via dynamic scope by the helpers below
+        # so we avoid forking /bin/uname on every stat or date call. POSIX
+        # doesn't give us arrays or global-scope alternatives that are portable
+        # across dash/ash/bash/zsh, so dynamic scope is the right tool.
+        local uname_s
+        uname_s=$(uname)
+
+        # --- cache directory selection ---
+        # credential_process is called by every AWS SDK client that hits a
+        # config-file profile — IDE extensions, LSPs, Terraform, kubectl token
+        # plugins — potentially many in parallel. Without caching, each caller
+        # spawns its own op + STS round-trip. With a shared ephemeral cache the
+        # hot path is a single `cat`.
+        #
+        # Probe order targets the fastest ephemeral per-user location available:
+        #   XDG_RUNTIME_DIR  Linux systemd-logind tmpfs, already per-user
+        #   /dev/shm         universal Linux tmpfs, world-writable so UID-scoped
+        #   TMPDIR           macOS launchd per-user /var/folders path
+        #   /tmp             universal fallback — disk, but always present
+        #
+        # The 0700 on the dir and 0600 on each file are defense-in-depth for
+        # the /dev/shm case where the parent is world-writable.
+        #
+        # TODO: --cache-dir <path> flag to pin the cache to ~/.aws/cli/cache
+        #       so MFA sessions survive container rebuilds without re-authing.
+        #       --persist-cache as a shorthand for that common case.
+        local cache_base="$XDG_RUNTIME_DIR"
+        if [ -z "$cache_base" ] || [ ! -w "$cache_base" ]; then
+            if [ -d /dev/shm ] && [ -w /dev/shm ]; then
+                cache_base=/dev/shm
+            elif [ -n "$TMPDIR" ] && [ -w "$TMPDIR" ]; then
+                cache_base="$TMPDIR"
+            else
+                cache_base=/tmp
+            fi
+        fi
+        local cache_dir="$cache_base/op-credentials-$(id -u)"
+        mkdir -p "$cache_dir" || return $?
+        chmod 700 "$cache_dir" 2>/dev/null || true
+
+        # --- cache key derivation ---
+        # OP item names are arbitrary strings; slugify to a valid filename.
+        # Static and MFA caches are keyed separately so they can coexist and
+        # age out independently — switching --mfa on/off doesn't bust the other.
+        local base_slug mfa_slug cache_name
+        base_slug=$(printf '%s' "$base_item" | tr -c 'A-Za-z0-9._-' '_')
+        cache_name="$base_slug"
+        if [ -n "$mfa_item" ]; then
+            mfa_slug=$(printf '%s' "$mfa_item" | tr -c 'A-Za-z0-9._-' '_')
+            cache_name="${cache_name}.mfa-${mfa_slug}"
+        fi
+        local cache_file="$cache_dir/${cache_name}.json"
+        local lock_file="$cache_dir/${cache_name}.lock"
+
+        # --- cross-platform helpers ---
+        # All three helpers are POSIX-only (no arrays, no [[ ]], no bashisms)
+        # and read $uname_s from the enclosing scope rather than calling uname
+        # themselves. `local` is the one non-POSIX construct used — it's
+        # supported by dash, ash, bash, and zsh, making it safe enough.
+
         _parse_exp() {
-            if [ "$(uname)" = "Darwin" ]; then
-                date -jf '%Y-%m-%dT%H:%M:%S' "${1%Z}" "+%s" 2>/dev/null
+            if [ "$uname_s" = "Darwin" ]; then
+                local t="${1%+*}"
+                t="${t%Z}"
+                date -u -jf '%Y-%m-%dT%H:%M:%S' "$t" +%s 2>/dev/null
             else
                 date -d "$1" +%s 2>/dev/null
             fi
         }
 
-        # if the cache file exists, use it
-        if [ -f "$CACHE_FILE" ]; then
-          CREDS="$(cat "$CACHE_FILE")"
-          CREDS_EXP="$(echo "$CREDS" | jq -r '.Credentials.Expiration // empty' 2>/dev/null)"
-          EXP="$(_parse_exp "$CREDS_EXP")"
-          NOW="$(date +%s)"
+        _file_mtime() {
+            if [ "$uname_s" = "Darwin" ]; then
+                stat -f %m "$1" 2>/dev/null
+            else
+                stat -c %Y "$1" 2>/dev/null
+            fi
+        }
 
-          # regen cache if expired or unparseable (e.g. corrupted/empty cache file)
-          if [ -z "$EXP" ] || [ "$EXP" -lt "$NOW" ]; then
-            CREDS="$(aws sts op-mfa "$1" "$2")"
-            [ -n "$CREDS" ] && echo "$CREDS" > "$CACHE_FILE"
-          fi
-        else
-          CREDS="$(aws sts op-mfa "$1" "$2")"
-          [ -n "$CREDS" ] && echo "$CREDS" > "$CACHE_FILE"
-        fi
+        # Freshness rules differ by credential type:
+        #   MFA sessions  — STS sets an explicit Expiration; we subtract a
+        #                   5-min buffer so callers never receive an about-to-
+        #                   expire token mid-request.
+        #   Static keys   — no Expiration field, so we fall back to file mtime
+        #                   with a 10h TTL (covers a workday; key rotations land
+        #                   within that window on the next cold-cache call).
+        # Cache contents are the raw credential_process JSON so the hot path
+        # is a single `cat` with no jq reshaping.
+        #
+        # TODO: --ttl <seconds> to override the 10h static TTL.
+        #       --no-cache to force a refresh on a single call (e.g. after
+        #       an emergency key rotation).
+        _emit_if_fresh() {
+            [ -f "$cache_file" ] || return 1
+            local exp now epoch mtime age
+            now=$(date +%s)
+            exp=$(jq -r '.Expiration // empty' "$cache_file" 2>/dev/null)
+            if [ -n "$exp" ]; then
+                epoch=$(_parse_exp "$exp")
+                [ -n "$epoch" ] || return 1
+                [ $((epoch - now)) -gt 300 ] || return 1
+            else
+                mtime=$(_file_mtime "$cache_file")
+                [ -n "$mtime" ] || return 1
+                age=$((now - mtime))
+                [ "$age" -lt 36000 ] || return 1
+            fi
+            cat "$cache_file"
+        }
 
-        echo "$CREDS" | jq -r '.Credentials | . + {Version: 1}'
+        # --- hot path: cache hit ---
+        # On a warm cache this is the only I/O — one `cat`. Returning here
+        # avoids the subshell + flock overhead entirely.
+        _emit_if_fresh && return 0
+
+        # --- slow path: fetch and cache (subshell) ---
+        # Runs inside a subshell so the flock file descriptor is automatically
+        # released when the block exits without needing explicit cleanup.
+        #
+        # The double-checked locking pattern (check outside lock -> acquire lock
+        # -> check again inside) ensures that with N concurrent cold-cache callers
+        # only one actually talks to 1Password + STS; the others block on flock,
+        # then read the freshly-written cache. One OTP consumed, not N.
+        #
+        # flock is util-linux — present on all Linux distros, absent on stock
+        # macOS. Without it we proceed unlocked; concurrent callers may each do
+        # their own op/STS round-trip, which wastes work but doesn't cause
+        # recursion or correctness problems.
+        #
+        # TODO: mkdir-based POSIX lock as a fallback to close the macOS race.
+        (
+            if command -v flock >/dev/null 2>&1; then
+                exec 9>"$lock_file"
+                flock -x 9
+            fi
+
+            _emit_if_fresh && exit 0
+
+            # --- fetch static credentials from 1Password ---
+            local base_json ak sk
+            base_json=$(op --vault="$vault" item get "$base_item" --format=json \
+                --fields='label=AccessKeyId,label=SecretAccessKey') || exit $?
+            ak=$(printf '%s' "$base_json" | jq -r '.[] | select(.label=="AccessKeyId") | .value')
+            sk=$(printf '%s' "$base_json" | jq -r '.[] | select(.label=="SecretAccessKey") | .value')
+            if [ -z "$ak" ] || [ -z "$sk" ] || [ "$ak" = "null" ] || [ "$sk" = "null" ]; then
+                echo "op-credentials: could not extract AccessKeyId/SecretAccessKey from '$base_item'" >&2
+                exit 1
+            fi
+
+            local creds_json
+            if [ -z "$mfa_item" ]; then
+                # --- static-only path ---
+                # No MFA needed; the IAM key is the credential. ProviderType "op"
+                # lets callers distinguish a raw key from an STS session token.
+                creds_json=$(jq -n --arg ak "$ak" --arg sk "$sk" \
+                    '{Version:1, AccessKeyId:$ak, SecretAccessKey:$sk, ProviderType:"op"}')
+            else
+                # --- MFA path: OP key -> IAM serial -> STS session ---
+                # AWS_PROFILE and AWS_CONFIG_FILE are unset for the inner `aws`
+                # calls so boto3 resolves credentials via EnvProvider (the static
+                # key we just fetched from OP) rather than re-entering
+                # credential_process. Without this, each concurrent SDK caller
+                # would recurse back into this alias, fanning out to ~5-6 `aws`
+                # Python processes per caller — enough to OOM a 12 GB devcontainer
+                # under normal IDE + LSP + Terraform + kubectl load.
+                local mfa_serial otp sts_json
+                mfa_serial=$(env -u AWS_PROFILE -u AWS_CONFIG_FILE \
+                    AWS_ACCESS_KEY_ID="$ak" AWS_SECRET_ACCESS_KEY="$sk" \
+                    aws iam list-mfa-devices \
+                        --query 'MFADevices[0].SerialNumber' \
+                        --output text) || exit $?
+                if [ -z "$mfa_serial" ] || [ "$mfa_serial" = "None" ]; then
+                    echo "op-credentials: no MFA device found for IAM user tied to '$base_item'" >&2
+                    exit 1
+                fi
+                otp=$(op item get "$mfa_item" --otp --vault="$vault") || exit $?
+                sts_json=$(env -u AWS_PROFILE -u AWS_CONFIG_FILE \
+                    AWS_ACCESS_KEY_ID="$ak" AWS_SECRET_ACCESS_KEY="$sk" \
+                    aws sts get-session-token \
+                        --serial-number "$mfa_serial" \
+                        --token-code "$otp") || exit $?
+                creds_json=$(printf '%s' "$sts_json" | jq '.Credentials
+                    | {Version:1, AccessKeyId, SecretAccessKey, SessionToken, Expiration, ProviderType:"opmfa"}')
+            fi
+
+            # --- atomic cache write ---
+            # Write to a temp file and mv into place so any concurrent reader
+            # sees either the previous complete file or the new complete file —
+            # never a partially-written one. chmod 600 before mv as a final
+            # defense-in-depth step in case the parent dir is shared.
+            local tmp_file
+            tmp_file=$(mktemp "${cache_file}.XXXXXX") || exit $?
+            chmod 600 "$tmp_file" 2>/dev/null || true
+            if ! echo "$creds_json" > "$tmp_file"; then
+                rm -f "$tmp_file"
+                exit 1
+            fi
+            mv "$tmp_file" "$cache_file" || exit $?
+
+            cat "$cache_file"
+        )
     }; f
 
-jit = 
+jit =
     !f() {
         duploctl jit web $@
     }; f
 
-console = 
+console =
     !f() {
         local ACCOUNT_ID="$(aws id)"
         local url="https://${ACCOUNT_ID}.signin.aws.amazon.com/console"
@@ -98,26 +304,15 @@ act-session =
     }; f
 
 [command sts]
-temp = 
+temp =
     !f() {
         aws sts assume-role \
         --role-arn arn:aws:iam::$(aws id):role/duplomaster \
         --role-session-name "AdminSession"
     }; f
 
-op-mfa = 
-    !f() {
-        local base_creds="$(aws op-credentials "$1")"
-        export AWS_ACCESS_KEY_ID="$(echo $base_creds | jq -r '.AccessKeyId')"
-        export AWS_SECRET_ACCESS_KEY="$(echo $base_creds | jq -r '.SecretAccessKey')"
-        aws sts get-session-token \
-          --serial-number $(aws iam mymfa) \
-          --token-code $(op item get "$2" --otp --vault=Private) \
-          | jq -r '. + {ProviderType: "opmfa"}'
-    }; f
-
 [command ssm]
-proxy = 
+proxy =
     !f() {
         # Arguments
         USER=$1
@@ -165,7 +360,7 @@ exec =
   }; f
 
 [command eks]
-add-config = 
+add-config =
   !f() {
     local cluster=`aws eks list-clusters --query "clusters[*]" | jq -r ".[]" | fzf`
     aws eks update-kubeconfig --name "$cluster"
@@ -175,7 +370,7 @@ add-config =
 mymfa = list-mfa-devices --query 'MFADevices[0].SerialNumber' --output text
 
 [command ecr]
-login = 
+login =
   !f() {
     local REGISTRY ACCOUNT_ID
     ACCOUNT_ID="$(aws id)"
@@ -192,7 +387,7 @@ select =
     local selected_parts=(${selected//|/})
     echo "${selected_parts[0]}"
   }; f
-port-forward = 
+port-forward =
   !f() {
     local target_instance target_cluster endpoint
     target_instance=$(aws ec2 select)
@@ -206,7 +401,7 @@ port-forward =
       --query "DBClusterEndpoints[?EndpointType=='WRITER'] | [0].Endpoint")
     echo """
     ec2 instance: ${target_instance}
-    rds cluster: ${target_cluster} 
+    rds cluster: ${target_cluster}
     rds endpoint: ${rds_endpoint}
     local port: ${local_port}
     remote port: ${remote_port}

@@ -21,6 +21,12 @@ check "jq is installed" command -v jq
 # Check on-create script exists
 check "on-create script exists" test -f /usr/local/share/onepassword-on-create.sh
 
+# Check post-start script exists
+check "post-start script exists" test -f /usr/local/share/onepassword-post-start.sh
+
+# Check op-session-reload is in PATH
+check "op-session-reload is executable" test -x /usr/local/bin/op-session-reload
+
 # Check config file exists
 check "config file exists" test -f /usr/local/etc/onepassword-feature.conf
 

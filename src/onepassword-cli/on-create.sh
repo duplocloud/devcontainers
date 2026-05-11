@@ -74,78 +74,6 @@ function add_account() {
   fi
 }
 
-# Sign in to 1Password account
-function signin_account() {
-  local account="$1"
-  
-  echo "Signing in to 1Password account: $account"
-  
-  # Get raw session token
-  local session_token
-  if [ -n "${OP_PASSWD:-}" ]; then
-    # Password provided via OP_PASSWD environment variable
-    session_token=$(echo "$OP_PASSWD" | timeout 30 op signin --account "$account" --raw 2>&1)
-  else
-    # Interactive prompt for password (timeout prevents hanging in CI/test)
-    session_token=$(timeout 15 op signin --account "$account" --raw 2>&1)
-  fi
-  local signin_status=$?
-  
-  if [ $signin_status -eq 0 ]; then
-    echo "Successfully signed in"
-    
-    # Get account UUID for session variable name
-    local account_info
-    local account_uuid
-    
-    # Strip https:// prefix if present for matching
-    local account_clean="${account#https://}"
-    
-    # Get account list and find matching account
-    account_info=$(op account list --format=json 2>/dev/null)
-    
-    # Try to match by URL (with or without https://)
-    account_uuid=$(echo "$account_info" | jq -r --arg acct "$account" --arg acct_clean "$account_clean" \
-      '.[] | select(.url == $acct or .url == ("https://" + $acct) or .url == $acct_clean or .url == ("https://" + $acct_clean)) | .user_uuid' 2>/dev/null | head -n 1)
-    
-    # If not found by URL, try by shorthand
-    if [ -z "$account_uuid" ] || [ "$account_uuid" = "null" ]; then
-      local shorthand="${account%%.*}"
-      account_uuid=$(echo "$account_info" | jq -r --arg sh "$shorthand" \
-        '.[] | select(.shorthand == $sh) | .user_uuid' 2>/dev/null | head -n 1)
-    fi
-    
-    if [ -n "$account_uuid" ] && [ "$account_uuid" != "null" ]; then
-      local session_var="OP_SESSION_${account_uuid}"
-      
-      # Export for current script
-      export "${session_var}=${session_token}"
-      
-      # Persist to .bashrc for future shells
-      local bashrc="${USER_HOME}/.bashrc"
-      
-      # Remove any existing session variable for this account
-      if [ -f "$bashrc" ]; then
-        sed -i "/^export ${session_var}=/d" "$bashrc"
-      fi
-      
-      # Append new session variable
-      echo "export ${session_var}=\"${session_token}\"" >> "$bashrc"
-      
-      echo "Session token persisted to .bashrc as ${session_var}"
-    else
-      echo "Warning: Could not determine account UUID, session may not persist"
-      # Fall back to legacy eval method
-      eval "export OP_SESSION_${account}=\"${session_token}\""
-    fi
-    
-    return 0
-  else
-    echo "Warning: Failed to sign in"
-    echo "$session_token" >&2
-    return 1
-  fi
-}
 
 # Check for authentication methods
 function check_authentication() {
@@ -208,24 +136,18 @@ function check_authentication() {
   OP_ACCOUNT_SHORTHAND=$(get_account_shorthand)
   
   # Check if account exists
-  if account_exists "$account" "$OP_ACCOUNT_SHORTHAND"; then
-    echo "1Password account found: $OP_ACCOUNT_SHORTHAND"
-    # Account exists, just sign in
-    if signin_account "$account"; then
-      OP_AUTH_METHOD="session"
-      OP_AUTHENTICATED="true"
-      return 0
-    fi
-  else
-    # Account doesn't exist, add it then sign in
+  if ! account_exists "$account" "$OP_ACCOUNT_SHORTHAND"; then
     echo "1Password account not found, adding: $OP_ACCOUNT_SHORTHAND"
-    if add_account "$OP_ACCOUNT_SHORTHAND"; then
-      if signin_account "$account"; then
-        OP_AUTH_METHOD="session"
-        OP_AUTHENTICATED="true"
-        return 0
-      fi
-    fi
+    add_account "$OP_ACCOUNT_SHORTHAND" || return 1
+  else
+    echo "1Password account found: $OP_ACCOUNT_SHORTHAND"
+  fi
+
+  # Sign in via the reloadable session script
+  if op-session-reload; then
+    OP_AUTH_METHOD="session"
+    OP_AUTHENTICATED="true"
+    return 0
   fi
 
   return 1
@@ -578,6 +500,19 @@ function ensure_known_hosts() {
 
 # Main execution
 check_authentication || true
+
+# Source the session file so subsequent op calls in this script have the token
+if [ -f /tmp/op-session.env ]; then
+  source /tmp/op-session.env
+fi
+
+# Wire .bashrc to source the ephemeral session file on every new shell (idempotent)
+bashrc="${USER_HOME}/.bashrc"
+session_env_line='[ -f /tmp/op-session.env ] && source /tmp/op-session.env'
+if ! grep -qF "$session_env_line" "$bashrc" 2>/dev/null; then
+  echo "$session_env_line" >> "$bashrc"
+  echo "Added /tmp/op-session.env sourcing to .bashrc"
+fi
 
 if [ "$OP_AUTHENTICATED" = "true" ]; then
   echo "1Password authenticated via: $OP_AUTH_METHOD"

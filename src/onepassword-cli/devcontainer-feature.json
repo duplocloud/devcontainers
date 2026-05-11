@@ -1,7 +1,7 @@
 {
   "name": "1Password CLI",
   "id": "onepassword-cli",
-  "version": "1.0.13",
+  "version": "1.1.0",
   "description": "Installs 1Password CLI with optional auto SSH key configuration",
   "documentationURL": "https://github.com/duplocloud/devcontainers/tree/main/src/onepassword-cli",
   "options": {
@@ -51,5 +51,6 @@
       "description": "Tags to search for SSH secrets (used when sshSecretNames is empty)."
     }
   },
-  "onCreateCommand": "bash /usr/local/share/onepassword-on-create.sh"
+  "onCreateCommand": "bash /usr/local/share/onepassword-on-create.sh",
+  "postStartCommand": "bash /usr/local/share/onepassword-post-start.sh"
 }

@@ -11,6 +11,14 @@ ENABLED="${ENABLED:-true}"
 cp "${FEATURE_DIR}/on-create.sh" /usr/local/share/onepassword-on-create.sh
 chmod 755 /usr/local/share/onepassword-on-create.sh
 
+# Install post-start script (runs on every container start / window reload)
+cp "${FEATURE_DIR}/post-start.sh" /usr/local/share/onepassword-post-start.sh
+chmod 755 /usr/local/share/onepassword-post-start.sh
+
+# Install op-session-reload as a PATH command
+cp "${FEATURE_DIR}/op-session-reload.sh" /usr/local/bin/op-session-reload
+chmod 755 /usr/local/bin/op-session-reload
+
 # Save feature options to config file for use during onCreate lifecycle hook
 mkdir -p /usr/local/etc
 cat <<EOF > /usr/local/etc/onepassword-feature.conf

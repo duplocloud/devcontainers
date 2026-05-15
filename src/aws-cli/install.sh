@@ -10,7 +10,12 @@ apt-get clean
 rm -rf /var/lib/apt/lists/*
 
 # Install AWS SSM Session Manager plugin
-curl -sSL "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" -o /tmp/session-manager-plugin.deb
+ARCH=$(dpkg --print-architecture)
+case "$ARCH" in
+    arm64) SSM_ARCH="ubuntu_arm64" ;;
+    *)     SSM_ARCH="ubuntu_64bit" ;;
+esac
+curl -sSL "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/${SSM_ARCH}/session-manager-plugin.deb" -o /tmp/session-manager-plugin.deb
 dpkg -i /tmp/session-manager-plugin.deb
 rm /tmp/session-manager-plugin.deb
 

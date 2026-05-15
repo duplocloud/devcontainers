@@ -312,6 +312,16 @@ temp =
     }; f
 
 [command ssm]
+select =
+  !f() {
+    local data=$(aws ssm describe-instance-information \
+      --filters "Key=PingStatus,Values=Online" \
+      --query "InstanceInformationList[*].[InstanceId, IPAddress, ComputerName, PlatformName]" \
+      --output text)
+    local selected=$(printf 'INSTANCE_ID\tIP\tNAME\tPLATFORM\n%s' "$data" | column -t | fzf --tac --header="Select a managed instance")
+    set -- $selected
+    echo "$1"
+  }; f
 proxy =
     !f() {
         # Arguments
@@ -349,13 +359,13 @@ select =
     local selected=$(aws ec2 describe-instances \
       --query "Reservations[*].Instances[*].{name: Tags[?Key=='Name'] | [0].Value, instance_id: InstanceId, ip_address: PrivateIpAddress, state: State.Name}" \
       --output table | fzf --header="Select an EC2 instance" --tac)
-    local selected_parts=(${selected//|/})
-    echo "${selected_parts[0]}"
+    set -- $(echo "$selected" | tr '|' ' ')
+    echo "$1"
   }; f
 exec =
   !f() {
     local user="${1:-ec2-user}"
-    local ec2id=`aws ec2 select`
+    local ec2id=`aws ssm select`
     ssh "$user@$ec2id"
   }; f
 
@@ -384,13 +394,13 @@ select =
     local selected=$(aws rds describe-db-clusters \
       --output table \
       --query "DBClusters[*].{name: TagList[?Key=='Name'] | [0].Value, id: DBClusterIdentifier, tenant: TagList[?Key=='TENANT_NAME'] | [0].Value}" | fzf --header="Select an RDS cluster" --tac)
-    local selected_parts=(${selected//|/})
-    echo "${selected_parts[0]}"
+    set -- $(echo "$selected" | tr '|' ' ')
+    echo "$1"
   }; f
 port-forward =
   !f() {
     local target_instance target_cluster endpoint
-    target_instance=$(aws ec2 select)
+    target_instance=$(aws ssm select)
     target_cluster=$(aws rds select)
     ports=${1:-5432:5432}
     local local_port=${ports%%:*}

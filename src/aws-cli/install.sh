@@ -9,6 +9,11 @@ apt-get install -y --no-install-recommends fzf
 apt-get clean
 rm -rf /var/lib/apt/lists/*
 
+# Install AWS SSM Session Manager plugin
+curl -sSL "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" -o /tmp/session-manager-plugin.deb
+dpkg -i /tmp/session-manager-plugin.deb
+rm /tmp/session-manager-plugin.deb
+
 # Use devcontainer environment variables with fallbacks
 USER_HOME="${_REMOTE_USER_HOME:-/root}"
 USER_NAME="${_REMOTE_USER:-root}"

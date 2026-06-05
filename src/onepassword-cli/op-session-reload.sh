@@ -55,8 +55,7 @@ account_enrolled() {
 
 # Sign-in requires the account to be enrolled first. Enrollment (op account add) prompts for the
 # Secret Key and can't be automated, so only an explicitly-interactive invocation may do it. In the
-# postStart hook the account is typically not yet enrolled — attempting it there is exactly what
-# produced the hanging "add an account manually now? [Y/n]" prompt — so we skip cleanly instead.
+# postStart hook the account is typically not yet enrolled
 if ! account_enrolled; then
   if [ "$ALLOW_INTERACTIVE" = "true" ]; then
     shorthand="${ACCOUNT%%.*}"

@@ -33,18 +33,16 @@ check "config file exists" test -f /usr/local/etc/onepassword-feature.conf
 # Verify default config values
 check "interactive defaults to false" grep -q '^INTERACTIVE="false"$' /usr/local/etc/onepassword-feature.conf
 
-# The on-create script wires the ephemeral session file into the login shell's rc file
-# (zsh -> .zshrc, else .bashrc) so op sessions load in new shells on zsh-based images too.
-check "session-env sourcing wired into login-shell rc" bash -c '
+# The on-create script wires the ephemeral session file into every installed shell's rc file
+# (bash -> .bashrc, zsh -> .zshrc) so op sessions load in new shells whichever shell launches.
+check "session-env sourcing wired into bash rc" bash -c '
   HOME_DIR="${_REMOTE_USER_HOME:-$HOME}"
-  USER_NAME="${_REMOTE_USER:-$(whoami)}"
-  LOGIN_SHELL="$(getent passwd "$USER_NAME" 2>/dev/null | cut -d: -f7)"
-  LOGIN_SHELL="${LOGIN_SHELL:-${SHELL:-/bin/bash}}"
-  case "$(basename "$LOGIN_SHELL")" in
-    zsh) RC="$HOME_DIR/.zshrc" ;;
-    *)   RC="$HOME_DIR/.bashrc" ;;
-  esac
-  grep -qF "/tmp/op-session.env" "$RC"
+  grep -qF "/tmp/op-session.env" "$HOME_DIR/.bashrc"
+'
+check "session-env sourcing wired into zsh rc when zsh is installed" bash -c '
+  HOME_DIR="${_REMOTE_USER_HOME:-$HOME}"
+  command -v zsh >/dev/null 2>&1 || exit 0
+  grep -qF "/tmp/op-session.env" "$HOME_DIR/.zshrc"
 '
 
 # Report results

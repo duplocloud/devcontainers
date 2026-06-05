@@ -91,9 +91,12 @@ duploctl jit update_aws_config myprofile
 
 ## Shell Compatibility
 
-The on-create script detects the remote user's login shell (from `/etc/passwd`, falling back to
-`$SHELL`) and sources the AWS CLI helpers into the matching interactive rc file — `~/.zshrc` for
-zsh, `~/.bashrc` otherwise — so the helpers load on zsh-based images as well as bash.
+The on-create script sources the AWS CLI helpers into **every installed shell's** interactive rc
+file — `~/.bashrc` when `bash` is present and `~/.zshrc` when `zsh` is present (appends are
+idempotent). It deliberately does not key off the login shell (`/etc/passwd` / `$SHELL`), because
+images often install zsh as the terminal's default without changing the user's login shell, which
+would leave the actually-used shell unconfigured. This way the helpers load on zsh-based images as
+well as bash.
 
 ## References
 

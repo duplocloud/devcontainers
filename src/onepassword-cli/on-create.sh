@@ -7,14 +7,25 @@ echo "Configuring 1Password CLI..."
 USER_HOME="${_REMOTE_USER_HOME:-$HOME}"
 USER_NAME="${_REMOTE_USER:-$(whoami)}"
 
-# Detect the remote user's login shell and pick the matching interactive rc file
-LOGIN_SHELL="$(getent passwd "$USER_NAME" 2>/dev/null | cut -d: -f7)"
-LOGIN_SHELL="${LOGIN_SHELL:-${SHELL:-/bin/bash}}"
-case "$(basename "$LOGIN_SHELL")" in
-  zsh) SHELL_KIND="zsh";  SHELL_RC="${USER_HOME}/.zshrc"  ;;
-  *)   SHELL_KIND="bash"; SHELL_RC="${USER_HOME}/.bashrc" ;;
-esac
-touch "$SHELL_RC"
+# Target every installed shell's interactive rc file, not just the login shell's. Images often
+# install zsh as the terminal default without changing the user's login shell, so targeting a single
+# shell leaves the actually-used shell unconfigured. The lines we persist (exports + a source line)
+# are shell-agnostic, so the same content applies to bash and zsh.
+SHELL_RCS=()
+for _s in bash zsh; do
+  command -v "$_s" >/dev/null 2>&1 && SHELL_RCS+=("${USER_HOME}/.${_s}rc")
+done
+[ ${#SHELL_RCS[@]} -eq 0 ] && SHELL_RCS=("${USER_HOME}/.bashrc")
+for _rc in "${SHELL_RCS[@]}"; do touch "$_rc"; done
+
+# Append a line to every shell rc, only when a matching line isn't already present (idempotent).
+# Usage: persist_line <grep-pattern> <line>
+persist_line() {
+  local pattern="$1" line="$2" rc
+  for rc in "${SHELL_RCS[@]}"; do
+    grep -q "$pattern" "$rc" 2>/dev/null || { echo "$line" >> "$rc"; echo "Persisted to $rc: $line"; }
+  done
+}
 
 # Load feature configuration
 if [ -f /usr/local/etc/onepassword-feature.conf ]; then
@@ -93,12 +104,7 @@ function check_authentication() {
     OP_AUTHENTICATED="true"
     # Connect requires JSON format - set globally
     export OP_FORMAT="json"
-    # Persist to bashrc
-    local bashrc="$SHELL_RC"
-    if ! grep -q "^export OP_FORMAT=" "$bashrc" 2>/dev/null; then
-      echo 'export OP_FORMAT="json"' >> "$bashrc"
-      echo "OP_FORMAT=json persisted to $SHELL_RC"
-    fi
+    persist_line "^export OP_FORMAT=" 'export OP_FORMAT="json"'
     return 0
   fi
 
@@ -109,12 +115,7 @@ function check_authentication() {
     OP_AUTHENTICATED="true"
     # Service accounts require JSON format - set globally
     export OP_FORMAT="json"
-    # Persist to bashrc
-    local bashrc="$SHELL_RC"
-    if ! grep -q "^export OP_FORMAT=" "$bashrc" 2>/dev/null; then
-      echo 'export OP_FORMAT="json"' >> "$bashrc"
-      echo "OP_FORMAT=json persisted to $SHELL_RC"
-    fi
+    persist_line "^export OP_FORMAT=" 'export OP_FORMAT="json"'
     return 0
   fi
 
@@ -164,38 +165,30 @@ function check_authentication() {
 
 # Configure vault environment variable
 function configure_vault() {
-  local bashrc="$SHELL_RC"
-  
   # Handle OP_VAULT (vault ID) - env takes precedence over vaultID option
   if [ -z "${OP_VAULT:-}" ]; then
     # No env var, check for vaultID option from feature config
     if [ -n "${VAULTID:-}" ]; then
       export OP_VAULT="$VAULTID"
       echo "Using vault ID from feature config: $OP_VAULT"
-      # Persist to bashrc
-      if ! grep -q "^export OP_VAULT=" "$bashrc" 2>/dev/null; then
-        echo "export OP_VAULT=\"${OP_VAULT}\"" >> "$bashrc"
-      fi
+      persist_line "^export OP_VAULT=" "export OP_VAULT=\"${OP_VAULT}\""
     fi
   else
     echo "Using existing OP_VAULT from environment: $OP_VAULT"
   fi
-  
+
   # Handle OP_VAULT_NAME (vault name) - env takes precedence over vault option
   if [ -z "${OP_VAULT_NAME:-}" ]; then
     # No env var, check for vault option from feature config
     if [ -n "${VAULT:-}" ]; then
       export OP_VAULT_NAME="$VAULT"
       echo "Using vault name from feature config: $OP_VAULT_NAME"
-      # Persist to bashrc
-      if ! grep -q "^export OP_VAULT_NAME=" "$bashrc" 2>/dev/null; then
-        echo "export OP_VAULT_NAME=\"${OP_VAULT_NAME}\"" >> "$bashrc"
-      fi
+      persist_line "^export OP_VAULT_NAME=" "export OP_VAULT_NAME=\"${OP_VAULT_NAME}\""
     fi
   else
     echo "Using existing OP_VAULT_NAME from environment: $OP_VAULT_NAME"
   fi
-  
+
   # Try to get vault ID from name if we have name but no ID (desktop/session only)
   if [ -z "${OP_VAULT:-}" ] && [ -n "${OP_VAULT_NAME:-}" ]; then
     if [ "$OP_AUTHENTICATED" = "true" ]; then
@@ -207,10 +200,7 @@ function configure_vault() {
         if [ -n "$vault_id" ] && [ "$vault_id" != "null" ]; then
           export OP_VAULT="$vault_id"
           echo "Resolved vault ID: $OP_VAULT"
-          # Persist to bashrc
-          if ! grep -q "^export OP_VAULT=" "$bashrc" 2>/dev/null; then
-            echo "export OP_VAULT=\"${OP_VAULT}\"" >> "$bashrc"
-          fi
+          persist_line "^export OP_VAULT=" "export OP_VAULT=\"${OP_VAULT}\""
         else
           echo "Warning: Could not resolve vault ID for '$OP_VAULT_NAME'"
         fi
@@ -515,13 +505,16 @@ if [ -f /tmp/op-session.env ]; then
   source /tmp/op-session.env
 fi
 
-# Wire the user's rc file to source the ephemeral session file on every new shell (idempotent)
-bashrc="$SHELL_RC"
+# Wire every shell's rc file to refresh the session on each new interactive shell, then source the
+# ephemeral session file (idempotent). The reload runs first so the file it writes is picked up by
+# the source line in the same shell. Unlike the postStart hook, an interactive shell has a TTY, so
+# this is where a session sign-in (prompt or OP_PASSWD) can actually complete. The `case $-`
+# guard limits it to interactive shells so scripts that source the rc don't trigger a sign-in.
+reload_line='case $- in *i*) command -v op-session-reload >/dev/null 2>&1 && op-session-reload --interactive ;; esac'
+persist_line "op-session-reload" "$reload_line"
+
 session_env_line='[ -f /tmp/op-session.env ] && source /tmp/op-session.env'
-if ! grep -qF "$session_env_line" "$bashrc" 2>/dev/null; then
-  echo "$session_env_line" >> "$bashrc"
-  echo "Added /tmp/op-session.env sourcing to $SHELL_RC"
-fi
+persist_line "op-session\.env" "$session_env_line"
 
 if [ "$OP_AUTHENTICATED" = "true" ]; then
   echo "1Password authenticated via: $OP_AUTH_METHOD"

@@ -1,8 +1,10 @@
 ## Shell Compatibility
 
-The on-create script detects the remote user's login shell (from `/etc/passwd`, falling back to
-`$SHELL`) and configures the matching interactive rc file — `~/.zshrc` for zsh, `~/.bashrc`
-otherwise. It sources the shell-appropriate gcloud SDK include files (`path.zsh.inc` /
-`completion.zsh.inc` for zsh, the `.bash.inc` variants for bash) plus the gcloud helper functions.
-This makes the gcloud CLI path and completion load correctly on zsh-based images (such as the
-Anthropic secure-AI reference image), where `.bashrc` is never read.
+The on-create script configures **every installed shell's** interactive rc file — `~/.bashrc` when
+`bash` is present and `~/.zshrc` when `zsh` is present (appends are idempotent). Each rc sources the
+shell-appropriate gcloud SDK include files (`path.bash.inc` / `completion.bash.inc` for bash, the
+`.zsh.inc` variants for zsh) plus the gcloud helper functions. It deliberately does not key off the
+login shell (`/etc/passwd` / `$SHELL`), because images often install zsh as the terminal's default
+without changing the user's login shell, which would leave the actually-used shell unconfigured. This
+makes the gcloud CLI path and completion load correctly on zsh-based images (such as the Anthropic
+secure-AI reference image) as well as bash.

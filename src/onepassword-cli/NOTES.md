@@ -125,7 +125,7 @@ This authentication method allows biometric authentication within the devcontain
 - Extracted during the sign-in process using `op signin --raw`
 - Mapped to the correct account UUID from `op account list`
 - Exported to the current script environment for immediate use
-- Appended to `.bashrc` for persistence across terminal sessions
+- Appended to the user's login-shell rc file for persistence across terminal sessions (see [Shell Compatibility](#shell-compatibility))
 
 **Note**: The account URL may be specified with or without the `https://` prefix. The feature handles both formats when looking up the account UUID.
 
@@ -391,6 +391,13 @@ The install script automatically disables problematic repositories (like yarn) b
    ```
 
 This issue is specific to Debian Trixie which uses sequoia (`sqv`) for GPG verification instead of the traditional apt-key approach.
+
+## Shell Compatibility
+
+The on-create script detects the remote user's login shell (from `/etc/passwd`, falling back to
+`$SHELL`) and writes its persisted variables and the session-token sourcing line to the matching
+interactive rc file — `~/.zshrc` for zsh, `~/.bashrc` otherwise. This makes the feature work on
+zsh-based images (such as the Anthropic secure-AI reference image) where `.bashrc` is never read.
 
 ## References 
 

@@ -28,5 +28,19 @@ fi; \
 echo "$OUT" | grep -qi "Google Cloud SDK" \
 '
 
+# The on-create script must source the shell-appropriate gcloud include files from the
+# login shell's rc file (zsh -> .zshrc + .zsh.inc, else .bashrc + .bash.inc).
+check "gcloud path inc sourced in login-shell rc" bash -c '
+  HOME_DIR="${_REMOTE_USER_HOME:-$HOME}"
+  USER_NAME="${_REMOTE_USER:-$(whoami)}"
+  LOGIN_SHELL="$(getent passwd "$USER_NAME" 2>/dev/null | cut -d: -f7)"
+  LOGIN_SHELL="${LOGIN_SHELL:-${SHELL:-/bin/bash}}"
+  case "$(basename "$LOGIN_SHELL")" in
+    zsh) RC="$HOME_DIR/.zshrc"; KIND=zsh ;;
+    *)   RC="$HOME_DIR/.bashrc"; KIND=bash ;;
+  esac
+  grep -q "google-cloud-sdk/path.$KIND.inc" "$RC"
+'
+
 # Report results
 reportResults

@@ -89,6 +89,12 @@ Quick create your profile:
 duploctl jit update_aws_config myprofile
 ```
 
+## Shell Compatibility
+
+The on-create script detects the remote user's login shell (from `/etc/passwd`, falling back to
+`$SHELL`) and sources the AWS CLI helpers into the matching interactive rc file — `~/.zshrc` for
+zsh, `~/.bashrc` otherwise — so the helpers load on zsh-based images as well as bash.
+
 ## References
 
 - [Duploctl JIT Documentation](https://cli.duplocloud.com/Jit/#duplo_resource.jit.DuploJit.update_aws_config)

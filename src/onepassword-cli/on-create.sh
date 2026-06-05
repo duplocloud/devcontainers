@@ -7,6 +7,15 @@ echo "Configuring 1Password CLI..."
 USER_HOME="${_REMOTE_USER_HOME:-$HOME}"
 USER_NAME="${_REMOTE_USER:-$(whoami)}"
 
+# Detect the remote user's login shell and pick the matching interactive rc file
+LOGIN_SHELL="$(getent passwd "$USER_NAME" 2>/dev/null | cut -d: -f7)"
+LOGIN_SHELL="${LOGIN_SHELL:-${SHELL:-/bin/bash}}"
+case "$(basename "$LOGIN_SHELL")" in
+  zsh) SHELL_KIND="zsh";  SHELL_RC="${USER_HOME}/.zshrc"  ;;
+  *)   SHELL_KIND="bash"; SHELL_RC="${USER_HOME}/.bashrc" ;;
+esac
+touch "$SHELL_RC"
+
 # Load feature configuration
 if [ -f /usr/local/etc/onepassword-feature.conf ]; then
   source /usr/local/etc/onepassword-feature.conf
@@ -85,10 +94,10 @@ function check_authentication() {
     # Connect requires JSON format - set globally
     export OP_FORMAT="json"
     # Persist to bashrc
-    local bashrc="${USER_HOME}/.bashrc"
+    local bashrc="$SHELL_RC"
     if ! grep -q "^export OP_FORMAT=" "$bashrc" 2>/dev/null; then
       echo 'export OP_FORMAT="json"' >> "$bashrc"
-      echo "OP_FORMAT=json persisted to .bashrc"
+      echo "OP_FORMAT=json persisted to $SHELL_RC"
     fi
     return 0
   fi
@@ -101,10 +110,10 @@ function check_authentication() {
     # Service accounts require JSON format - set globally
     export OP_FORMAT="json"
     # Persist to bashrc
-    local bashrc="${USER_HOME}/.bashrc"
+    local bashrc="$SHELL_RC"
     if ! grep -q "^export OP_FORMAT=" "$bashrc" 2>/dev/null; then
       echo 'export OP_FORMAT="json"' >> "$bashrc"
-      echo "OP_FORMAT=json persisted to .bashrc"
+      echo "OP_FORMAT=json persisted to $SHELL_RC"
     fi
     return 0
   fi
@@ -155,7 +164,7 @@ function check_authentication() {
 
 # Configure vault environment variable
 function configure_vault() {
-  local bashrc="${USER_HOME}/.bashrc"
+  local bashrc="$SHELL_RC"
   
   # Handle OP_VAULT (vault ID) - env takes precedence over vaultID option
   if [ -z "${OP_VAULT:-}" ]; then
@@ -506,12 +515,12 @@ if [ -f /tmp/op-session.env ]; then
   source /tmp/op-session.env
 fi
 
-# Wire .bashrc to source the ephemeral session file on every new shell (idempotent)
-bashrc="${USER_HOME}/.bashrc"
+# Wire the user's rc file to source the ephemeral session file on every new shell (idempotent)
+bashrc="$SHELL_RC"
 session_env_line='[ -f /tmp/op-session.env ] && source /tmp/op-session.env'
 if ! grep -qF "$session_env_line" "$bashrc" 2>/dev/null; then
   echo "$session_env_line" >> "$bashrc"
-  echo "Added /tmp/op-session.env sourcing to .bashrc"
+  echo "Added /tmp/op-session.env sourcing to $SHELL_RC"
 fi
 
 if [ "$OP_AUTHENTICATED" = "true" ]; then

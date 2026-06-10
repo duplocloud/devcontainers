@@ -80,9 +80,11 @@ echo "Signing in to 1Password account: $ACCOUNT"
 set +e
 local_passwd="${OP_PASSWD:-}"
 if [ -n "$local_passwd" ]; then
+  echo "OP Password found, running op signin with it"
   session_token=$(echo "$local_passwd" | timeout 30 op signin --account "$ACCOUNT" --raw 2>&1)
   signin_status=$?
 elif [ "$ALLOW_INTERACTIVE" = "true" ]; then
+  echo "No OP_PASSWD set; prompting for interactive sign-in (up to 60s)"
   session_token=$(timeout 60 op signin --account "$ACCOUNT" --raw 2>&1)
   signin_status=$?
 else

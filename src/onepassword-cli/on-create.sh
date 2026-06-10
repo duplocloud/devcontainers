@@ -45,55 +45,12 @@ chmod 700 "${USER_HOME}/.ssh"
 # Track authentication status
 OP_AUTHENTICATED="false"
 OP_AUTH_METHOD=""
-OP_ACCOUNT_SHORTHAND=""
-
-# Extract subdomain from account URL for shorthand
-function get_account_shorthand() {
-  # Check if OP_ACCOUNT is set in environment first (takes precedence)
-  local account="${OP_ACCOUNT:-${ACCOUNT:-my.1password.com}}"
-  # Extract subdomain (everything before the first dot)
-  echo "${account%%.*}"
-}
 
 # Check if terminal is interactive
 function is_terminal_interactive() {
   # Check if stdin is a terminal and stdout is a terminal
   [ -t 0 ] && [ -t 1 ]
 }
-
-# Check if account exists in op account list
-function account_exists() {
-  local account="$1"
-  local shorthand="$2"
-  
-  # Check by URL or shorthand
-  op account list 2>/dev/null | grep -qE "(${account}|${shorthand})"
-}
-
-# Add 1Password account
-function add_account() {
-  local account="${ACCOUNT:-my.1password.com}"
-  local shorthand="$1"
-  local email="${USEREMAIL:-}"
-  
-  echo "Adding 1Password account: $account (shorthand: $shorthand)"
-  
-  local cmd="op account add --address '$account' --shorthand '$shorthand'"
-
-  if [ -n "$email" ]; then
-    cmd="$cmd --email '$email'"
-  fi
-
-  # Use timeout to prevent hanging when no one is at the terminal
-  if timeout 15 bash -c "$cmd" </dev/null; then
-    echo "Account added successfully"
-    return 0
-  else
-    echo "Warning: Failed to add account"
-    return 1
-  fi
-}
-
 
 # Check for authentication methods
 function check_authentication() {
@@ -140,21 +97,14 @@ function check_authentication() {
     return 1
   fi
 
-  # Get account shorthand
-  # Check if OP_ACCOUNT is already set in environment (takes precedence)
-  local account="${OP_ACCOUNT:-${ACCOUNT:-my.1password.com}}"
-  OP_ACCOUNT_SHORTHAND=$(get_account_shorthand)
-  
-  # Check if account exists
-  if ! account_exists "$account" "$OP_ACCOUNT_SHORTHAND"; then
-    echo "1Password account not found, adding: $OP_ACCOUNT_SHORTHAND"
-    add_account "$OP_ACCOUNT_SHORTHAND" || return 1
-  else
-    echo "1Password account found: $OP_ACCOUNT_SHORTHAND"
-  fi
-
-  # Sign in via the reloadable session script
-  if op-session-reload; then
+  # Establish a session non-interactively. Enrollment (op account add, which needs the Secret Key)
+  # and any interactive sign-in are deferred to the first interactive shell via the rc hook
+  # (op-session-reload --interactive), so we never prompt or block here.
+  # op-session-reload writes its token to the session file on success; source it and confirm a real
+  # session before claiming auth (a deferral also exits 0, so we can't trust the exit code alone).
+  op-session-reload || true
+  [ -f /tmp/op-session.env ] && source /tmp/op-session.env
+  if op whoami --account "${OP_ACCOUNT:-${ACCOUNT:-my.1password.com}}" &>/dev/null; then
     OP_AUTH_METHOD="session"
     OP_AUTHENTICATED="true"
     return 0

@@ -7,6 +7,26 @@ echo "Configuring 1Password CLI..."
 USER_HOME="${_REMOTE_USER_HOME:-$HOME}"
 USER_NAME="${_REMOTE_USER:-$(whoami)}"
 
+# Target every installed shell's interactive rc file, not just the login shell's. Images often
+# install zsh as the terminal default without changing the user's login shell, so targeting a single
+# shell leaves the actually-used shell unconfigured. The lines we persist (exports + a source line)
+# are shell-agnostic, so the same content applies to bash and zsh.
+SHELL_RCS=()
+for _s in bash zsh; do
+  command -v "$_s" >/dev/null 2>&1 && SHELL_RCS+=("${USER_HOME}/.${_s}rc")
+done
+[ ${#SHELL_RCS[@]} -eq 0 ] && SHELL_RCS=("${USER_HOME}/.bashrc")
+for _rc in "${SHELL_RCS[@]}"; do touch "$_rc"; done
+
+# Append a line to every shell rc, only when a matching line isn't already present (idempotent).
+# Usage: persist_line <grep-pattern> <line>
+persist_line() {
+  local pattern="$1" line="$2" rc
+  for rc in "${SHELL_RCS[@]}"; do
+    grep -q "$pattern" "$rc" 2>/dev/null || { echo "$line" >> "$rc"; echo "Persisted to $rc: $line"; }
+  done
+}
+
 # Load feature configuration
 if [ -f /usr/local/etc/onepassword-feature.conf ]; then
   source /usr/local/etc/onepassword-feature.conf
@@ -25,55 +45,12 @@ chmod 700 "${USER_HOME}/.ssh"
 # Track authentication status
 OP_AUTHENTICATED="false"
 OP_AUTH_METHOD=""
-OP_ACCOUNT_SHORTHAND=""
-
-# Extract subdomain from account URL for shorthand
-function get_account_shorthand() {
-  # Check if OP_ACCOUNT is set in environment first (takes precedence)
-  local account="${OP_ACCOUNT:-${ACCOUNT:-my.1password.com}}"
-  # Extract subdomain (everything before the first dot)
-  echo "${account%%.*}"
-}
 
 # Check if terminal is interactive
 function is_terminal_interactive() {
   # Check if stdin is a terminal and stdout is a terminal
   [ -t 0 ] && [ -t 1 ]
 }
-
-# Check if account exists in op account list
-function account_exists() {
-  local account="$1"
-  local shorthand="$2"
-  
-  # Check by URL or shorthand
-  op account list 2>/dev/null | grep -qE "(${account}|${shorthand})"
-}
-
-# Add 1Password account
-function add_account() {
-  local account="${ACCOUNT:-my.1password.com}"
-  local shorthand="$1"
-  local email="${USEREMAIL:-}"
-  
-  echo "Adding 1Password account: $account (shorthand: $shorthand)"
-  
-  local cmd="op account add --address '$account' --shorthand '$shorthand'"
-
-  if [ -n "$email" ]; then
-    cmd="$cmd --email '$email'"
-  fi
-
-  # Use timeout to prevent hanging when no one is at the terminal
-  if timeout 15 bash -c "$cmd" </dev/null; then
-    echo "Account added successfully"
-    return 0
-  else
-    echo "Warning: Failed to add account"
-    return 1
-  fi
-}
-
 
 # Check for authentication methods
 function check_authentication() {
@@ -84,12 +61,7 @@ function check_authentication() {
     OP_AUTHENTICATED="true"
     # Connect requires JSON format - set globally
     export OP_FORMAT="json"
-    # Persist to bashrc
-    local bashrc="${USER_HOME}/.bashrc"
-    if ! grep -q "^export OP_FORMAT=" "$bashrc" 2>/dev/null; then
-      echo 'export OP_FORMAT="json"' >> "$bashrc"
-      echo "OP_FORMAT=json persisted to .bashrc"
-    fi
+    persist_line "^export OP_FORMAT=" 'export OP_FORMAT="json"'
     return 0
   fi
 
@@ -100,12 +72,7 @@ function check_authentication() {
     OP_AUTHENTICATED="true"
     # Service accounts require JSON format - set globally
     export OP_FORMAT="json"
-    # Persist to bashrc
-    local bashrc="${USER_HOME}/.bashrc"
-    if ! grep -q "^export OP_FORMAT=" "$bashrc" 2>/dev/null; then
-      echo 'export OP_FORMAT="json"' >> "$bashrc"
-      echo "OP_FORMAT=json persisted to .bashrc"
-    fi
+    persist_line "^export OP_FORMAT=" 'export OP_FORMAT="json"'
     return 0
   fi
 
@@ -130,21 +97,14 @@ function check_authentication() {
     return 1
   fi
 
-  # Get account shorthand
-  # Check if OP_ACCOUNT is already set in environment (takes precedence)
-  local account="${OP_ACCOUNT:-${ACCOUNT:-my.1password.com}}"
-  OP_ACCOUNT_SHORTHAND=$(get_account_shorthand)
-  
-  # Check if account exists
-  if ! account_exists "$account" "$OP_ACCOUNT_SHORTHAND"; then
-    echo "1Password account not found, adding: $OP_ACCOUNT_SHORTHAND"
-    add_account "$OP_ACCOUNT_SHORTHAND" || return 1
-  else
-    echo "1Password account found: $OP_ACCOUNT_SHORTHAND"
-  fi
-
-  # Sign in via the reloadable session script
-  if op-session-reload; then
+  # Establish a session non-interactively. Enrollment (op account add, which needs the Secret Key)
+  # and any interactive sign-in are deferred to the first interactive shell via the rc hook
+  # (op-session-reload --interactive), so we never prompt or block here.
+  # op-session-reload writes its token to the session file on success; source it and confirm a real
+  # session before claiming auth (a deferral also exits 0, so we can't trust the exit code alone).
+  op-session-reload || true
+  [ -f /tmp/op-session.env ] && source /tmp/op-session.env
+  if op whoami --account "${OP_ACCOUNT:-${ACCOUNT:-my.1password.com}}" &>/dev/null; then
     OP_AUTH_METHOD="session"
     OP_AUTHENTICATED="true"
     return 0
@@ -155,38 +115,30 @@ function check_authentication() {
 
 # Configure vault environment variable
 function configure_vault() {
-  local bashrc="${USER_HOME}/.bashrc"
-  
   # Handle OP_VAULT (vault ID) - env takes precedence over vaultID option
   if [ -z "${OP_VAULT:-}" ]; then
     # No env var, check for vaultID option from feature config
     if [ -n "${VAULTID:-}" ]; then
       export OP_VAULT="$VAULTID"
       echo "Using vault ID from feature config: $OP_VAULT"
-      # Persist to bashrc
-      if ! grep -q "^export OP_VAULT=" "$bashrc" 2>/dev/null; then
-        echo "export OP_VAULT=\"${OP_VAULT}\"" >> "$bashrc"
-      fi
+      persist_line "^export OP_VAULT=" "export OP_VAULT=\"${OP_VAULT}\""
     fi
   else
     echo "Using existing OP_VAULT from environment: $OP_VAULT"
   fi
-  
+
   # Handle OP_VAULT_NAME (vault name) - env takes precedence over vault option
   if [ -z "${OP_VAULT_NAME:-}" ]; then
     # No env var, check for vault option from feature config
     if [ -n "${VAULT:-}" ]; then
       export OP_VAULT_NAME="$VAULT"
       echo "Using vault name from feature config: $OP_VAULT_NAME"
-      # Persist to bashrc
-      if ! grep -q "^export OP_VAULT_NAME=" "$bashrc" 2>/dev/null; then
-        echo "export OP_VAULT_NAME=\"${OP_VAULT_NAME}\"" >> "$bashrc"
-      fi
+      persist_line "^export OP_VAULT_NAME=" "export OP_VAULT_NAME=\"${OP_VAULT_NAME}\""
     fi
   else
     echo "Using existing OP_VAULT_NAME from environment: $OP_VAULT_NAME"
   fi
-  
+
   # Try to get vault ID from name if we have name but no ID (desktop/session only)
   if [ -z "${OP_VAULT:-}" ] && [ -n "${OP_VAULT_NAME:-}" ]; then
     if [ "$OP_AUTHENTICATED" = "true" ]; then
@@ -198,10 +150,7 @@ function configure_vault() {
         if [ -n "$vault_id" ] && [ "$vault_id" != "null" ]; then
           export OP_VAULT="$vault_id"
           echo "Resolved vault ID: $OP_VAULT"
-          # Persist to bashrc
-          if ! grep -q "^export OP_VAULT=" "$bashrc" 2>/dev/null; then
-            echo "export OP_VAULT=\"${OP_VAULT}\"" >> "$bashrc"
-          fi
+          persist_line "^export OP_VAULT=" "export OP_VAULT=\"${OP_VAULT}\""
         else
           echo "Warning: Could not resolve vault ID for '$OP_VAULT_NAME'"
         fi
@@ -506,13 +455,16 @@ if [ -f /tmp/op-session.env ]; then
   source /tmp/op-session.env
 fi
 
-# Wire .bashrc to source the ephemeral session file on every new shell (idempotent)
-bashrc="${USER_HOME}/.bashrc"
+# Wire every shell's rc file to refresh the session on each new interactive shell, then source the
+# ephemeral session file (idempotent). The reload runs first so the file it writes is picked up by
+# the source line in the same shell. Unlike the postStart hook, an interactive shell has a TTY, so
+# this is where a session sign-in (prompt or OP_PASSWD) can actually complete. The `case $-`
+# guard limits it to interactive shells so scripts that source the rc don't trigger a sign-in.
+reload_line='case $- in *i*) command -v op-session-reload >/dev/null 2>&1 && op-session-reload --interactive ;; esac'
+persist_line "op-session-reload" "$reload_line"
+
 session_env_line='[ -f /tmp/op-session.env ] && source /tmp/op-session.env'
-if ! grep -qF "$session_env_line" "$bashrc" 2>/dev/null; then
-  echo "$session_env_line" >> "$bashrc"
-  echo "Added /tmp/op-session.env sourcing to .bashrc"
-fi
+persist_line "op-session\.env" "$session_env_line"
 
 if [ "$OP_AUTHENTICATED" = "true" ]; then
   echo "1Password authenticated via: $OP_AUTH_METHOD"

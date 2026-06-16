@@ -89,6 +89,15 @@ Quick create your profile:
 duploctl jit update_aws_config myprofile
 ```
 
+## Shell Compatibility
+
+The on-create script sources the AWS CLI helpers into **every installed shell's** interactive rc
+file — `~/.bashrc` when `bash` is present and `~/.zshrc` when `zsh` is present (appends are
+idempotent). It deliberately does not key off the login shell (`/etc/passwd` / `$SHELL`), because
+images often install zsh as the terminal's default without changing the user's login shell, which
+would leave the actually-used shell unconfigured. This way the helpers load on zsh-based images as
+well as bash.
+
 ## References
 
 - [Duploctl JIT Documentation](https://cli.duplocloud.com/Jit/#duplo_resource.jit.DuploJit.update_aws_config)

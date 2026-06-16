@@ -6,19 +6,34 @@ echo "Configuring Google Cloud CLI..."
 # Use devcontainer environment variables with fallbacks
 USER_HOME="${_REMOTE_USER_HOME:-$HOME}"
 
-# Add gcloud CLI setup to .bashrc with some extra roomy spacing
-cat <<EOF >> "${USER_HOME}/.bashrc"
+# Add gcloud CLI setup to every installed shell's interactive rc file. The gcloud SDK ships
+# shell-specific include files (path.bash.inc / path.zsh.inc, etc.), so each shell gets its own.
+# We can't rely on the login shell ($SHELL / getent passwd): images often install zsh as the
+# terminal default without changing the user's login shell, so targeting a single shell leaves the
+# actually-used shell unconfigured.
+configure_shell() {
+  local kind="$1" rc="$2"
+  command -v "$kind" >/dev/null 2>&1 || return 0
+  touch "$rc"
+  # Idempotent: skip if this feature's block is already present.
+  grep -qF 'Duplocloud GCloud CLI Feature' "$rc" 2>/dev/null && return 0
+  cat <<EOF >> "$rc"
 
 ## Sourced from Duplocloud GCloud CLI Feature
 # Google Cloud CLI - path setup
-if [ -f '${USER_HOME}/google-cloud-sdk/path.bash.inc' ]; then . '${USER_HOME}/google-cloud-sdk/path.bash.inc'; fi
+if [ -f '${USER_HOME}/google-cloud-sdk/path.${kind}.inc' ]; then . '${USER_HOME}/google-cloud-sdk/path.${kind}.inc'; fi
 
 # Google Cloud CLI - shell command completion
-if [ -f '${USER_HOME}/google-cloud-sdk/completion.bash.inc' ]; then . '${USER_HOME}/google-cloud-sdk/completion.bash.inc'; fi
+if [ -f '${USER_HOME}/google-cloud-sdk/completion.${kind}.inc' ]; then . '${USER_HOME}/google-cloud-sdk/completion.${kind}.inc'; fi
 
 # Google Cloud CLI - helper functions
 if [ -f '/usr/local/share/gcloud-cli-helpers.sh' ]; then . '/usr/local/share/gcloud-cli-helpers.sh'; fi
 
 EOF
+  echo "Google Cloud CLI setup added to ${rc}"
+}
+
+configure_shell bash "${USER_HOME}/.bashrc"
+configure_shell zsh  "${USER_HOME}/.zshrc"
 
 echo "Google Cloud CLI configured successfully!"

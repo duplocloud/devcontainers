@@ -37,16 +37,61 @@ if op whoami --account "$ACCOUNT" &>/dev/null 2>&1; then
   exit 0
 fi
 
+# Whether this invocation is allowed to prompt the user. A plain TTY test is NOT a reliable signal:
+# the dev container CLI allocates a PTY for the postStart hook, so stdin/stdout look like a terminal
+# even though no human is watching. Gate prompting on an EXPLICIT opt-in instead — the shell rc
+# passes --interactive because a person just opened a terminal; the postStart hook never does.
+ALLOW_INTERACTIVE="false"
+for _arg in "$@"; do
+  [ "$_arg" = "--interactive" ] && ALLOW_INTERACTIVE="true"
+done
+[ "${OP_RELOAD_INTERACTIVE:-}" = "true" ] && ALLOW_INTERACTIVE="true"
+
+# True when the account is already enrolled locally (op signin then only needs a password).
+account_enrolled() {
+  local shorthand="${ACCOUNT%%.*}"
+  op account list 2>/dev/null | grep -qE "(${ACCOUNT}|${shorthand})"
+}
+
+# Sign-in requires the account to be enrolled first. Enrollment (op account add) prompts for the
+# Secret Key and can't be automated, so only an explicitly-interactive invocation may do it. In the
+# postStart hook the account is typically not yet enrolled
+if ! account_enrolled; then
+  if [ "$ALLOW_INTERACTIVE" = "true" ]; then
+    shorthand="${ACCOUNT%%.*}"
+    echo "No 1Password account enrolled; adding $ACCOUNT (shorthand: $shorthand)..."
+    add_cmd="op account add --address \"$ACCOUNT\" --shorthand \"$shorthand\""
+    [ -n "${USEREMAIL:-}" ] && add_cmd="$add_cmd --email \"$USEREMAIL\""
+    if ! eval "$add_cmd"; then
+      echo "Error: Failed to add 1Password account" >&2
+      exit 1
+    fi
+  else
+    echo "No 1Password account enrolled yet; open a terminal to sign in. Skipping."
+    exit 0
+  fi
+fi
+
 echo "Signing in to 1Password account: $ACCOUNT"
 
-# Get raw session token
+# Get raw session token. OP_PASSWD enables a fully non-interactive sign-in (works in postStart once
+# the account is enrolled). Without it we may only prompt when explicitly interactive; otherwise skip
+# so the hook never blocks on a password prompt.
+set +e
 local_passwd="${OP_PASSWD:-}"
 if [ -n "$local_passwd" ]; then
+  echo "OP Password found, running op signin with it"
   session_token=$(echo "$local_passwd" | timeout 30 op signin --account "$ACCOUNT" --raw 2>&1)
+  signin_status=$?
+elif [ "$ALLOW_INTERACTIVE" = "true" ]; then
+  echo "No OP_PASSWD set; prompting for interactive sign-in (up to 60s)"
+  session_token=$(timeout 60 op signin --account "$ACCOUNT" --raw 2>&1)
+  signin_status=$?
 else
-  session_token=$(timeout 15 op signin --account "$ACCOUNT" --raw 2>&1)
+  echo "No OP_PASSWD set and not an interactive invocation; open a terminal to sign in. Skipping."
+  exit 0
 fi
-signin_status=$?
+set -e
 
 if [ $signin_status -ne 0 ]; then
   echo "Error: Failed to sign in to 1Password" >&2

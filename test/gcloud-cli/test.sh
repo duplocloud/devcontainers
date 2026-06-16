@@ -28,5 +28,17 @@ fi; \
 echo "$OUT" | grep -qi "Google Cloud SDK" \
 '
 
+# The on-create script must source the shell-appropriate gcloud include files from every installed
+# shell's rc file (bash -> .bashrc + path.bash.inc, zsh -> .zshrc + path.zsh.inc).
+check "gcloud path inc sourced in bash rc" bash -c '
+  HOME_DIR="${_REMOTE_USER_HOME:-$HOME}"
+  grep -q "google-cloud-sdk/path.bash.inc" "$HOME_DIR/.bashrc"
+'
+check "gcloud path inc sourced in zsh rc when zsh is installed" bash -c '
+  HOME_DIR="${_REMOTE_USER_HOME:-$HOME}"
+  command -v zsh >/dev/null 2>&1 || exit 0
+  grep -q "google-cloud-sdk/path.zsh.inc" "$HOME_DIR/.zshrc"
+'
+
 # Report results
 reportResults

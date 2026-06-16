@@ -109,7 +109,7 @@ The feature installs `tf.sh` in two locations:
 - `/usr/local/bin/tf` - Executable wrapper (use as `tf` command)
 - `/usr/local/share/duplocloud/tf.sh` - Sourceable shell script (for functions)
 
-Both files are sourced in shell rc files (`.bashrc`, `.zshrc`, `/etc/bash.bashrc`) to make the helper functions available in interactive shells.
+The `tf` wrapper is placed on `PATH`, so it works in any interactive shell (bash or zsh) with no rc-file changes. If you want the underlying helper functions in your current shell, source the sharable copy directly: `source /usr/local/share/duplocloud/tf.sh`.
 
 ## References 
 
